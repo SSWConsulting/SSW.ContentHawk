@@ -43,6 +43,10 @@ safe-outputs:
   create-pull-request:
     title-prefix: "[Content Judge] "
     labels: ["${{ inputs.label_name }}"]
+    # .github/ is protected; allow only ContentHawk snapshots. Use *.md + **/*.md (** alone + .md does not match TODO/2026-03-16_Snapshot_foo.md reliably).
+    allowed-files:
+      - ".github/ContentHawk/TODO/*.md"
+      - ".github/ContentHawk/DONE/*.md"
     max: 1
 
 tools:
