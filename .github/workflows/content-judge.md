@@ -67,7 +67,6 @@ safe-outputs:
     labels: ["${{ inputs.label_name }}"]
     title-prefix: "🦅 ContentHawk - Content Audit: "
     max: 30
-
 steps:
   - name: Guard — no open Content Judge PR for this label
     uses: actions/github-script@v7
@@ -82,7 +81,8 @@ steps:
         } else {
           core.info('No open judge PR for this label. Proceeding.');
         }
-
+  - name: Generated Skipped Files Output
+    run: mkdir -p /tmp/gh-aw && echo "" > /tmp/gh-aw/skipped_files.txt
 tools:
   github:
     lockdown: false
@@ -120,12 +120,17 @@ post-steps:
         echo "_No agent output directory found._" >> "$GITHUB_STEP_SUMMARY"
       fi
 
+  - name: Ensure skipped files artifact is readable
+    if: always()
+    run: chmod a+r /tmp/gh-aw/skipped_files.txt 2>/dev/null || true
+
   - name: Upload Agent Artifacts
     if: always()
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     with:
       name: ${{ github.run_id }}
-      path: /tmp/gh-aw/
+      path: /tmp/gh-aw/skipped_files.txt
+      if-no-files-found: error
       retention-days: 7
 
   - name: Trigger Agent 2b (PR Creator)
@@ -246,6 +251,7 @@ Evaluate the file's content against the **Intent** extracted in Step 1a. Your ju
 
 Create a GitHub issue using the `create-issue` safe-output tool:
 
+
 **Title**: `🦅 ContentHawk - Content Audit: <issue_summary>`
 
 > Note: the `title-prefix` safe-output setting will prepend `🦅 ContentHawk - Content Audit: ` automatically — so only pass the `<issue_summary>` part as the title value.
@@ -274,8 +280,12 @@ Log the issue creation. Continue to the next row.
 
 #### 3e. Skip the file (if `needs_action = false`)
 
-Log that the file was skipped. Continue to the next row.
+  if you find a file that does not need action, use the following command to append the file path to a list of skipped files for this run.
+
+```
+echo "- <Path>\n" >> /tmp/gh-aw/skipped_files.txt
+```
 
 ### Step 4 — Summary
 
-After the loop completes, output a summary of the run. Include the total number of issues created, files skipped, and rows still pending (if the headroom limit was reached). Include the **`snapshot_path`** you resolved in Step 1.0 so logs tie back to the correct file. Upload the skipped files to a file called `skipped_files.txt`.
+After the loop completes, output a summary of the run. Include the total number of issues created, files skipped, and rows still pending (if the headroom limit was reached). Include the **`snapshot_path`** you resolved in Step 1.0 so logs tie back to the correct file. Skipped files are written to `/tmp/gh-aw/skipped_files.txt` and will be uploaded automatically by the artifact post-step.

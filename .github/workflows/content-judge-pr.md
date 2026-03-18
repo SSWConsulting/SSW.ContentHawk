@@ -23,6 +23,14 @@ on:
         description: "The workflow run ID of the Agent 2a (Judge) run that created the issues. Used to filter issues to this specific run."
         required: true
 
+steps: 
+  - name: Download skipped file list
+    uses: actions/download-artifact@v8
+    with:
+      name: skipped-files
+      path: /tmp/gh-aw
+      run-id: ${{ inputs.judge_run_id }}
+
 engine:
   id: copilot
   model: gpt-5-mini
@@ -44,9 +52,10 @@ safe-outputs:
     title-prefix: "[Content Judge] "
     labels: ["${{ inputs.label_name }}"]
     # .github/ is protected; allow only ContentHawk snapshots. Use *.md + **/*.md (** alone + .md does not match TODO/2026-03-16_Snapshot_foo.md reliably).
+    protected-files: allowed
     allowed-files:
-      - ".github/ContentHawk/TODO/*.md"
-      - ".github/ContentHawk/DONE/*.md"
+      - .github/ContentHawk/TODO/*.md
+      - .github/ContentHawk/DONE/*.md
     max: 1
 
 tools:
@@ -173,7 +182,20 @@ Continue to Step 3 — the snapshot still needs to be committed even if no issue
 
 ### Step 3 — Update the snapshot
 
-Produce the full updated snapshot file. The content must be identical to the original snapshot **except** for the rows that have a matching issue in `matched_issues`:
+
+run the following command to get a list of files that were skipped by Agent 2a and stored in the artifact:
+
+```
+  skipped_files=$(cat /tmp/gh-aw/skipped_files.txt || echo "")
+```
+
+For each file in `skipped_files`, add the following to the matching row:
+
+- For each matched row, update:
+  - `CheckResult` → `skipped`
+  - `CheckedDate` → `<today's date in YYYY-MM-DD>`
+
+For each issue in `matched_issues`, add the following to the matching row:
 
 - For each matched row, update:
   - `CheckResult` → `Issue #<number>`
@@ -218,6 +240,7 @@ Then open a pull request using the `create-pull-request` safe-output tool:
 |-----------------------|-------|
 | Issues matched        | <N>   |
 | Rows still pending    | <P>   |
+| Skipped files         | <S>   |
 
 ### Label
 

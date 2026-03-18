@@ -23,7 +23,7 @@
 #
 # Agent 2a (Judge) of the ContentHawk pipeline. Discovers the merged snapshot on main by label (filename convention), parses the Agent Configuration and Files to Review table, then iterates over every pending row in order. For each file it reads the content, judges whether the file needs action based on the Intent captured by Agent 1, and opens a labelled GitHub issue for files that need fixing. After all affordable rows have been processed a post-step dispatches Agent 2b (content-judge-pr) which reads the created issues and opens a pull request to update the snapshot. Stops immediately if the number of open labelled issues already meets or exceeds max_open_issues without making any changes.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"101d4a276cc6af8fbab5ff1448bdbe9fc2cd4ce85b28498a674676e9bc96c783","compiler_version":"v0.59.0","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"03291567761ae75234cae44c72e21fdf56f5d128537501090a645a981bbea121","compiler_version":"v0.59.0","strict":true}
 
 name: "Content Judge"
 "on":
@@ -301,6 +301,8 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: "const labelName = '${{ inputs.label_name }}';\nconst q = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:open label:${labelName} \"gh-aw-workflow-id: content-judge-pr\"`;\nconst { data } = await github.rest.search.issuesAndPullRequests({ q });\nif (data.total_count > 0) {\n  const number = data.items[0].number;\n  core.setFailed(`A judge PR already exists for this intent (PR #${number}). Skipping to avoid duplicates.`);\n} else {\n  core.info('No open judge PR for this label. Proceeding.');\n}\n"
+      - name: Generated Skipped Files Output
+        run: mkdir -p /tmp/gh-aw && echo "" > /tmp/gh-aw/skipped_files.txt
 
       - name: Configure Git credentials
         env:
@@ -970,11 +972,15 @@ jobs:
         name: Workflow Summary
         run: "echo \"## ContentHawk — Agent 2 (Judge)\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Inputs\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Field            | Value |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"|------------------|-------|\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Label            | \\`$INPUT_LABEL_NAME\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Max Open Issues  | $INPUT_MAX_OPEN_ISSUES |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Snapshot         | Resolved via \\`*_Snapshot_${INPUT_LABEL_NAME}.md\\` on \\`main\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Agent Output\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\nif [ -d /tmp/gh-aw ]; then\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\n  find /tmp/gh-aw -type f | head -30 >> \"$GITHUB_STEP_SUMMARY\"\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\nelse\n  echo \"_No agent output directory found._\" >> \"$GITHUB_STEP_SUMMARY\"\nfi\n"
       - if: always()
+        name: Ensure skipped files artifact is readable
+        run: chmod a+r /tmp/gh-aw/skipped_files.txt 2>/dev/null || true
+      - if: always()
         name: Upload Agent Artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
+          if-no-files-found: error
           name: ${{ github.run_id }}
-          path: /tmp/gh-aw/
+          path: /tmp/gh-aw/skipped_files.txt
           retention-days: 7
       - env:
           GH_TOKEN: ${{ secrets.TINA_GITHUB_PAT }}
