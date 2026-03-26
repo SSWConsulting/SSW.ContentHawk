@@ -23,17 +23,23 @@ on:
         description: "The workflow run ID of the Agent 2a (Judge) run that created the issues. Used to filter issues to this specific run."
         required: true
 
+steps: 
+  - name: Guard — no open Content Judge PR for this label
+    uses: ./.github/actions/guard-open-pr
+    with:
+      label_name: ${{ inputs.label_name }}
+      workflow_id: content-judge-pr
+  - name: Download skipped file list
+    run: gh run download $JUDGE_RUN_ID -n $JUDGE_RUN_ID -D /tmp/gh-aw
+    env:
+      JUDGE_RUN_ID: ${{ inputs.judge_run_id }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 engine:
   id: copilot
   model: gpt-5-mini
 
 permissions: read-all
-
-env:
-  GIT_AUTHOR_NAME: "content-hawk"
-  GIT_AUTHOR_EMAIL: "content-hawk@users.noreply.github.com"
-  GIT_COMMITTER_NAME: "content-hawk"
-  GIT_COMMITTER_EMAIL: "content-hawk@users.noreply.github.com"
 
 concurrency:
   group: "contenthawk-judge-pr-${{ inputs.label_name }}"
@@ -44,9 +50,10 @@ safe-outputs:
     title-prefix: "[Content Judge] "
     labels: ["${{ inputs.label_name }}"]
     # .github/ is protected; allow only ContentHawk snapshots. Use *.md + **/*.md (** alone + .md does not match TODO/2026-03-16_Snapshot_foo.md reliably).
+    protected-files: allowed
     allowed-files:
-      - ".github/ContentHawk/TODO/*.md"
-      - ".github/ContentHawk/DONE/*.md"
+      - .github/ContentHawk/TODO/*.md
+      - .github/ContentHawk/DONE/*.md
     max: 1
 
 tools:
@@ -94,6 +101,7 @@ post-steps:
       retention-days: 7
 ---
 
+
 ## Important context
 
 This workflow is **Agent 2b (PR Creator)** in a multi-agent pipeline called **ContentHawk**:
@@ -114,16 +122,6 @@ The snapshot file is **self-contained** — it stores every configuration value 
 | Judge Run ID     | `${{ inputs.judge_run_id }}`           | Filtering issues to the specific Agent 2a run  |
 
 ---
-
-### Step 0 — Guard: check for an existing judge PR
-
-Before doing any work, check whether an open PR already exists for this label. Use the GitHub toolset to query for open PRs with the label `${{ inputs.label_name }}` and the search term `[Content Judge]`:
-
-If the command returns **any** results, **stop immediately**. Output a message like:
-
-> A judge PR already exists for this intent (PR #\<number\>). Skipping to avoid duplicates.
-
-Do **not** read the snapshot or open a PR. End the workflow here.
 
 ### Step 1 — Read and parse the snapshot
 
@@ -173,7 +171,22 @@ Continue to Step 3 — the snapshot still needs to be committed even if no issue
 
 ### Step 3 — Update the snapshot
 
-Produce the full updated snapshot file. The content must be identical to the original snapshot **except** for the rows that have a matching issue in `matched_issues`:
+
+run the following command to get a list of files that were skipped by Agent 2a and stored in the artifact and store the result in a variable called `skipped_files`:
+
+```
+
+cat /tmp/gh-aw/skipped_files.txt || echo "No skipped files artifact found."
+
+```
+
+For each file in `skipped_files`, add the following to the matching row:
+
+- For each matched row, update:
+  - `CheckResult` → `skipped`
+  - `CheckedDate` → `<today's date in YYYY-MM-DD>`
+
+For each issue in `matched_issues`, add the following to the matching row:
 
 - For each matched row, update:
   - `CheckResult` → `Issue #<number>`
@@ -218,6 +231,7 @@ Then open a pull request using the `create-pull-request` safe-output tool:
 |-----------------------|-------|
 | Issues matched        | <N>   |
 | Rows still pending    | <P>   |
+| Skipped files         | <S>   |
 
 ### Label
 

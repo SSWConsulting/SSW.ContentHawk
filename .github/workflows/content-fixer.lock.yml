@@ -23,7 +23,7 @@
 #
 # Agent 3 (Fixer) of the ContentHawk pipeline. Searches for open issues with the intent label, reads the snapshot to obtain PR Preferences and Intent, then bundles eligible issues into groups and creates one PR per bundle that applies the content fixes and closes the linked issues. Skips issues already referenced in existing open fixer PRs to avoid duplicate work. Stops immediately if the number of eligible issues is below the configured minimum threshold.
 #
-# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"8e2d7fa642453542422707651038eae977f70c1684d3105967a34258c23a648f","compiler_version":"v0.59.0","strict":true}
+# gh-aw-metadata: {"schema_version":"v2","frontmatter_hash":"8fbe13a296eb2e918127aa20bd1753575d4b817ffa598ead776b4faeb61e346e","compiler_version":"v0.59.0","strict":true}
 
 name: "Content Fixer"
 "on":
@@ -36,9 +36,6 @@ name: "Content Fixer"
         default: "10"
         description: Minimum number of eligible open issues required before Agent 3 will create PRs. Defaults to 10.
         required: false
-      snapshot_path:
-        description: Repo-relative path to the snapshot file on main (e.g. '.github/ContentHawk/TODO/2026-03-05_Snapshot_archive-legacy-rules.md').
-        required: true
 
 permissions: {}
 
@@ -47,12 +44,6 @@ concurrency:
   group: contenthawk-fixer-${{ inputs.label_name }}
 
 run-name: "Content Fixer"
-
-env:
-  GIT_AUTHOR_EMAIL: content-hawk@users.noreply.github.com
-  GIT_AUTHOR_NAME: content-hawk
-  GIT_COMMITTER_EMAIL: content-hawk@users.noreply.github.com
-  GIT_COMMITTER_NAME: content-hawk
 
 jobs:
   activation:
@@ -131,7 +122,6 @@ jobs:
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
           GH_AW_INPUTS_LABEL_NAME: ${{ inputs.label_name }}
           GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE: ${{ inputs.min_issues_to_bundle }}
-          GH_AW_INPUTS_SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
         run: |
           bash /opt/gh-aw/actions/create_prompt_first.sh
           {
@@ -192,7 +182,6 @@ jobs:
           GH_AW_GITHUB_RUN_ID: ${{ github.run_id }}
           GH_AW_INPUTS_LABEL_NAME: ${{ inputs.label_name }}
           GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE: ${{ inputs.min_issues_to_bundle }}
-          GH_AW_INPUTS_SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -213,7 +202,6 @@ jobs:
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
           GH_AW_INPUTS_LABEL_NAME: ${{ inputs.label_name }}
           GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE: ${{ inputs.min_issues_to_bundle }}
-          GH_AW_INPUTS_SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -234,8 +222,7 @@ jobs:
                 GH_AW_GITHUB_RUN_ID: process.env.GH_AW_GITHUB_RUN_ID,
                 GH_AW_GITHUB_WORKSPACE: process.env.GH_AW_GITHUB_WORKSPACE,
                 GH_AW_INPUTS_LABEL_NAME: process.env.GH_AW_INPUTS_LABEL_NAME,
-                GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE: process.env.GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE,
-                GH_AW_INPUTS_SNAPSHOT_PATH: process.env.GH_AW_INPUTS_SNAPSHOT_PATH
+                GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE: process.env.GH_AW_INPUTS_MIN_ISSUES_TO_BUNDLE
               }
             });
       - name: Validate prompt placeholders
@@ -620,13 +607,106 @@ jobs:
           
           bash /opt/gh-aw/actions/start_safe_outputs_server.sh
           
+      - name: Setup MCP Scripts Config
+        run: |
+          mkdir -p /opt/gh-aw/mcp-scripts/logs
+          cat > /opt/gh-aw/mcp-scripts/tools.json << 'GH_AW_MCP_SCRIPTS_TOOLS_EOF'
+          {
+            "serverName": "mcpscripts",
+            "version": "1.0.0",
+            "logDir": "/opt/gh-aw/mcp-scripts/logs",
+            "tools": [
+              {
+                "name": "list-snapshots",
+                "description": "Lists all snapshot files produced by Agent 1\n",
+                "inputSchema": {
+                  "properties": {},
+                  "type": "object"
+                },
+                "handler": "list-snapshots.sh",
+                "env": {
+                  "INPUT_LABEL_NAME": "INPUT_LABEL_NAME"
+                },
+                "timeout": 60
+              }
+            ]
+          }
+          GH_AW_MCP_SCRIPTS_TOOLS_EOF
+          cat > /opt/gh-aw/mcp-scripts/mcp-server.cjs << 'GH_AW_MCP_SCRIPTS_SERVER_EOF'
+            const path = require("path");
+            const { startHttpServer } = require("./mcp_scripts_mcp_server_http.cjs");
+            const configPath = path.join(__dirname, "tools.json");
+            const port = parseInt(process.env.GH_AW_MCP_SCRIPTS_PORT || "3000", 10);
+            const apiKey = process.env.GH_AW_MCP_SCRIPTS_API_KEY || "";
+            startHttpServer(configPath, {
+              port: port,
+              stateless: true,
+              logDir: "/opt/gh-aw/mcp-scripts/logs"
+            }).catch(error => {
+              console.error("Failed to start mcp-scripts HTTP server:", error);
+              process.exit(1);
+            });
+          GH_AW_MCP_SCRIPTS_SERVER_EOF
+          chmod +x /opt/gh-aw/mcp-scripts/mcp-server.cjs
+          
+      - name: Setup MCP Scripts Tool Files
+        run: |
+          cat > /opt/gh-aw/mcp-scripts/list-snapshots.sh << 'GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_EOF'
+          #!/bin/bash
+          # Auto-generated mcp-script tool: list-snapshots
+          # Lists all snapshot files produced by Agent 1
+          
+          set -euo pipefail
+          
+          ls .github/ContentHawk/TODO/*_Snapshot_${INPUT_LABEL_NAME}.md 2>/dev/null | sort -r
+          
+          
+          GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_EOF
+          chmod +x /opt/gh-aw/mcp-scripts/list-snapshots.sh
+          
+      - name: Generate MCP Scripts Server Config
+        id: mcp-scripts-config
+        run: |
+          # Generate a secure random API key (360 bits of entropy, 40+ chars)
+          # Mask immediately to prevent timing vulnerabilities
+          API_KEY=$(openssl rand -base64 45 | tr -d '/+=')
+          echo "::add-mask::${API_KEY}"
+          
+          PORT=3000
+          
+          # Set outputs for next steps
+          {
+            echo "mcp_scripts_api_key=${API_KEY}"
+            echo "mcp_scripts_port=${PORT}"
+          } >> "$GITHUB_OUTPUT"
+          
+          echo "MCP Scripts server will run on port ${PORT}"
+          
+      - name: Start MCP Scripts HTTP Server
+        id: mcp-scripts-start
+        env:
+          DEBUG: '*'
+          GH_AW_MCP_SCRIPTS_PORT: ${{ steps.mcp-scripts-config.outputs.mcp_scripts_port }}
+          GH_AW_MCP_SCRIPTS_API_KEY: ${{ steps.mcp-scripts-config.outputs.mcp_scripts_api_key }}
+          INPUT_LABEL_NAME: ${{ inputs.label_name }}
+        run: |
+          # Environment variables are set above to prevent template injection
+          export DEBUG
+          export GH_AW_MCP_SCRIPTS_PORT
+          export GH_AW_MCP_SCRIPTS_API_KEY
+          
+          bash /opt/gh-aw/actions/start_mcp_scripts_server.sh
+          
       - name: Start MCP Gateway
         id: start-mcp-gateway
         env:
+          GH_AW_MCP_SCRIPTS_API_KEY: ${{ steps.mcp-scripts-start.outputs.api_key }}
+          GH_AW_MCP_SCRIPTS_PORT: ${{ steps.mcp-scripts-start.outputs.port }}
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
           GH_AW_SAFE_OUTPUTS_API_KEY: ${{ steps.safe-outputs-start.outputs.api_key }}
           GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-start.outputs.port }}
           GITHUB_MCP_SERVER_TOKEN: ${{ secrets.TINA_GITHUB_PAT }}
+          INPUT_LABEL_NAME: ${{ inputs.label_name }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
           set -eo pipefail
@@ -644,7 +724,7 @@ jobs:
           export DEBUG="*"
           
           export GH_AW_ENGINE="copilot"
-          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_LOCKDOWN -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -e TAVILY_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.1.15'
+          export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_LOCKDOWN -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_MCP_SCRIPTS_PORT -e GH_AW_MCP_SCRIPTS_API_KEY -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -e INPUT_LABEL_NAME -e TAVILY_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.1.15'
           
           mkdir -p /home/runner/.copilot
           cat << GH_AW_MCP_CONFIG_EOF | bash /opt/gh-aw/actions/start_mcp_gateway.sh
@@ -658,6 +738,13 @@ jobs:
                   "GITHUB_PERSONAL_ACCESS_TOKEN": "\${GITHUB_MCP_SERVER_TOKEN}",
                   "GITHUB_READ_ONLY": "1",
                   "GITHUB_TOOLSETS": "issues,repos,pull_requests,search,labels"
+                }
+              },
+              "mcpscripts": {
+                "type": "http",
+                "url": "http://host.docker.internal:$GH_AW_MCP_SCRIPTS_PORT",
+                "headers": {
+                  "Authorization": "\${GH_AW_MCP_SCRIPTS_API_KEY}"
                 }
               },
               "safeoutputs": {
@@ -730,6 +817,7 @@ jobs:
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
+          INPUT_LABEL_NAME: ${{ inputs.label_name }}
           XDG_CONFIG_HOME: /home/runner
       - name: Detect inference access error
         id: detect-inference-error
@@ -825,6 +913,15 @@ jobs:
             setupGlobals(core, github, context, exec, io);
             const { main } = require('/opt/gh-aw/actions/parse_copilot_log.cjs');
             await main();
+      - name: Parse MCP Scripts logs for step summary
+        if: always()
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
+            setupGlobals(core, github, context, exec, io);
+            const { main } = require('/opt/gh-aw/actions/parse_mcp_scripts_logs.cjs');
+            await main();
       - name: Parse MCP Gateway logs for step summary
         if: always()
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
@@ -852,10 +949,9 @@ jobs:
       - env:
           INPUT_LABEL_NAME: ${{ inputs.label_name }}
           INPUT_MIN_ISSUES: ${{ inputs.min_issues_to_bundle }}
-          INPUT_SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
         if: always()
         name: Workflow Summary
-        run: "echo \"## ContentHawk — Agent 3 (Fixer)\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Inputs\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Field              | Value |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"|--------------------|-------|\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Snapshot Path      | $INPUT_SNAPSHOT_PATH |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Label              | \\`$INPUT_LABEL_NAME\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Min Issues         | $INPUT_MIN_ISSUES |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Agent Output\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\nif [ -d /tmp/gh-aw ]; then\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\n  find /tmp/gh-aw -type f | head -30 >> \"$GITHUB_STEP_SUMMARY\"\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\nelse\n  echo \"_No agent output directory found._\" >> \"$GITHUB_STEP_SUMMARY\"\nfi\n"
+        run: "echo \"## ContentHawk — Agent 3 (Fixer)\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Inputs\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Field              | Value |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"|--------------------|-------|\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Label              | \\`$INPUT_LABEL_NAME\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Min Issues         | $INPUT_MIN_ISSUES |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Agent Output\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\nif [ -d /tmp/gh-aw ]; then\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\n  find /tmp/gh-aw -type f | head -30 >> \"$GITHUB_STEP_SUMMARY\"\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\nelse\n  echo \"_No agent output directory found._\" >> \"$GITHUB_STEP_SUMMARY\"\nfi\n"
       - if: always()
         name: Upload Agent Artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -875,6 +971,7 @@ jobs:
             /tmp/gh-aw/sandbox/agent/logs/
             /tmp/gh-aw/redacted-urls.log
             /tmp/gh-aw/mcp-logs/
+            /tmp/gh-aw/mcp-scripts/logs/
             /tmp/gh-aw/sandbox/firewall/logs/
             /tmp/gh-aw/agent-stdio.log
             /tmp/gh-aw/agent/

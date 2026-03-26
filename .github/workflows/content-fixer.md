@@ -12,9 +12,6 @@ description: >
 on:
   workflow_dispatch:
     inputs:
-      snapshot_path:
-        description: "Repo-relative path to the snapshot file on main (e.g. '.github/ContentHawk/TODO/2026-03-05_Snapshot_archive-legacy-rules.md')."
-        required: true
       label_name:
         description: "GitHub label slug that ties this pipeline together (e.g. 'archive-legacy-rules'). Must match the Label field in the snapshot."
         required: true
@@ -35,18 +32,21 @@ mcp-servers:
       TAVILY_API_KEY: "${{ secrets.TAVILY_API_KEY }}"
     allowed: ["tavily_search"]
 
+mcp-scripts:
+  list-snapshots:
+    env:
+      INPUT_LABEL_NAME: ${{ inputs.label_name }}
+    description: >
+      Lists all snapshot files produced by Agent 1
+    run: |
+      ls .github/ContentHawk/TODO/*_Snapshot_${INPUT_LABEL_NAME}.md 2>/dev/null | sort -r
+
 permissions: read-all
 
 network:
   allowed:
     - defaults
     - "*.tavily.com"
-
-env:
-  GIT_AUTHOR_NAME: "content-hawk"
-  GIT_AUTHOR_EMAIL: "content-hawk@users.noreply.github.com"
-  GIT_COMMITTER_NAME: "content-hawk"
-  GIT_COMMITTER_EMAIL: "content-hawk@users.noreply.github.com"
 
 concurrency:
   group: "contenthawk-fixer-${{ inputs.label_name }}"
@@ -70,7 +70,6 @@ post-steps:
   - name: Workflow Summary
     if: always()
     env:
-      INPUT_SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
       INPUT_LABEL_NAME: ${{ inputs.label_name }}
       INPUT_MIN_ISSUES: ${{ inputs.min_issues_to_bundle }}
     run: |
@@ -81,7 +80,6 @@ post-steps:
       echo "" >> "$GITHUB_STEP_SUMMARY"
       echo "| Field              | Value |" >> "$GITHUB_STEP_SUMMARY"
       echo "|--------------------|-------|" >> "$GITHUB_STEP_SUMMARY"
-      echo "| Snapshot Path      | $INPUT_SNAPSHOT_PATH |" >> "$GITHUB_STEP_SUMMARY"
       echo "| Label              | \`$INPUT_LABEL_NAME\` |" >> "$GITHUB_STEP_SUMMARY"
       echo "| Min Issues         | $INPUT_MIN_ISSUES |" >> "$GITHUB_STEP_SUMMARY"
       echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -120,7 +118,6 @@ The snapshot file is **self-contained** — it stores every configuration value 
 
 | Input              | Value                                    | Used for                                           |
 |--------------------|------------------------------------------|----------------------------------------------------|
-| Snapshot Path      | `${{ inputs.snapshot_path }}`            | Locating the snapshot file to read PR Preferences   |
 | Label Name         | `${{ inputs.label_name }}`               | Finding issues, labelling PRs, concurrency guard    |
 | Min Issues         | `${{ inputs.min_issues_to_bundle }}`     | Threshold before creating PRs                       |
 
@@ -136,9 +133,18 @@ If `open_count < min_issues`, **stop immediately**. Output a message like:
 
 Do **not** read the snapshot or create any PRs. End the workflow here.
 
-### Step 1 — Read and parse the snapshot
+### Step 1 — Discover, then read and parse the snapshot
 
-Read the full content of the file at `${{ inputs.snapshot_path }}` from the `main` branch.
+#### 1.0 — Resolve the snapshot file on `main`
+
+Use the MCP script `list-snapshots` to find snapshot files on `main` that match the label naming convention.
+
+1. If the result is empty (no snapshot files found), **stop immediately** with an error:
+
+   > No snapshot file on main for label '${{ inputs.label_name }}'. Expected path pattern: `.github/ContentHawk/TODO/<date>_Snapshot_${{ inputs.label_name }}.md`. Aborting.
+
+2. **Choose `snapshot_path`** — use the **first line** of the result (the latest date). If there are multiple lines, the first is already the correct one (latest date).
+3. Call that path **`snapshot_path`**. Read the full content of that file from `main`.
 
 #### 1a. Parse the Agent Configuration table
 
@@ -275,7 +281,7 @@ Open a PR using the `create-pull-request` safe-output tool:
 
 ### Snapshot
 
-`${{ inputs.snapshot_path }}`
+`<snapshot_path resolved in Step 1.0>`
 
 ### Issues resolved
 

@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       label_name:
-        description: "GitHub label slug (e.g. 'archive-legacy-rules'). Must match Agent 1 naming: snapshot files on main are named '<date>_Snapshot_<label>.md' under '.github/ContentHawk/TODO/'."
+        description: "Label matching the agentic workflow label."
         required: true
       max_open_issues:
         description: "Stop opening new issues once this many issues with the label are already open. Defaults to 30."
@@ -52,12 +52,6 @@ network:
     - defaults
     - "*.tavily.com"
 
-env:
-  GIT_AUTHOR_NAME: "content-hawk"
-  GIT_AUTHOR_EMAIL: "content-hawk@users.noreply.github.com"
-  GIT_COMMITTER_NAME: "content-hawk"
-  GIT_COMMITTER_EMAIL: "content-hawk@users.noreply.github.com"
-
 concurrency:
   group: "contenthawk-judge-${{ inputs.label_name }}"
   cancel-in-progress: false
@@ -67,22 +61,14 @@ safe-outputs:
     labels: ["${{ inputs.label_name }}"]
     title-prefix: "🦅 ContentHawk - Content Audit: "
     max: 30
-
 steps:
   - name: Guard — no open Content Judge PR for this label
-    uses: actions/github-script@v7
+    uses: ./.github/actions/guard-open-pr
     with:
-      script: |
-        const labelName = '${{ inputs.label_name }}';
-        const q = `repo:${context.repo.owner}/${context.repo.repo} is:pr is:open label:${labelName} "gh-aw-workflow-id: content-judge-pr"`;
-        const { data } = await github.rest.search.issuesAndPullRequests({ q });
-        if (data.total_count > 0) {
-          const number = data.items[0].number;
-          core.setFailed(`A judge PR already exists for this intent (PR #${number}). Skipping to avoid duplicates.`);
-        } else {
-          core.info('No open judge PR for this label. Proceeding.');
-        }
-
+      label_name: ${{ inputs.label_name }}
+      workflow_id: content-judge-pr
+  - name: Generated Skipped Files Output
+    run: mkdir -p /tmp/gh-aw && echo "" > /tmp/gh-aw/skipped_files.txt
 tools:
   github:
     lockdown: false
@@ -120,12 +106,17 @@ post-steps:
         echo "_No agent output directory found._" >> "$GITHUB_STEP_SUMMARY"
       fi
 
+  - name: Ensure skipped files artifact is readable
+    if: always()
+    run: chmod a+r /tmp/gh-aw/skipped_files.txt 2>/dev/null || true
+
   - name: Upload Agent Artifacts
     if: always()
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v7
     with:
       name: ${{ github.run_id }}
-      path: /tmp/gh-aw/
+      path: /tmp/gh-aw/skipped_files.txt
+      if-no-files-found: error
       retention-days: 7
 
   - name: Trigger Agent 2b (PR Creator)
@@ -246,6 +237,7 @@ Evaluate the file's content against the **Intent** extracted in Step 1a. Your ju
 
 Create a GitHub issue using the `create-issue` safe-output tool:
 
+
 **Title**: `🦅 ContentHawk - Content Audit: <issue_summary>`
 
 > Note: the `title-prefix` safe-output setting will prepend `🦅 ContentHawk - Content Audit: ` automatically — so only pass the `<issue_summary>` part as the title value.
@@ -274,8 +266,12 @@ Log the issue creation. Continue to the next row.
 
 #### 3e. Skip the file (if `needs_action = false`)
 
-Log that the file was skipped. Continue to the next row.
+  if you find a file that does not need action, use the following command to append the file path to a list of skipped files for this run.
+
+```
+echo "- <Path>" >> /tmp/gh-aw/skipped_files.txt
+```
 
 ### Step 4 — Summary
 
-After the loop completes, output a summary of the run. Include the total number of issues created, files skipped, and rows still pending (if the headroom limit was reached). Include the **`snapshot_path`** you resolved in Step 1.0 so logs tie back to the correct file. Upload the skipped files to a file called `skipped_files.txt`.
+After the loop completes, output a summary of the run. Include the total number of issues created, files skipped, and rows still pending (if the headroom limit was reached). Include the **`snapshot_path`** you resolved in Step 1.0 so logs tie back to the correct file. Skipped files are written to `/tmp/gh-aw/skipped_files.txt` and will be uploaded automatically by the artifact post-step.

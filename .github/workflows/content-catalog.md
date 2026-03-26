@@ -54,14 +54,11 @@ network:
     - defaults
     - "*.tavily.com"
 
-env:
-  GIT_AUTHOR_NAME: "content-hawk"
-  GIT_AUTHOR_EMAIL: "content-hawk@users.noreply.github.com"
-  GIT_COMMITTER_NAME: "content-hawk"
-  GIT_COMMITTER_EMAIL: "content-hawk@users.noreply.github.com"
-
 safe-outputs:
   create-pull-request:
+    protected-files: allowed
+    allowed-files:
+      - .github/ContentHawk/TODO/*.md
     title-prefix: "[Content Catalog] "
     max: 1
   add-labels:
@@ -165,19 +162,6 @@ All six prompts are captured and must be written into the snapshot file:
 
 ---
 
-### Step 0 — Check for an existing catalog PR
-
-Before doing any work, check whether an open pull request already exists for this intent. Run:
-
-```bash
-gh pr list --label "${{ inputs.label_name }}" --state open --search "[Content Catalog]" --json number,title
-```
-
-If the command returns **any** results, **stop immediately**. Output a message like:
-
-> A catalog PR already exists for this intent (PR #\<number\>). Skipping to avoid duplicates.
-
-Do **not** create a label, snapshot file, or pull request. End the workflow here.
 
 ### Step 1 — Create the intent label
 
