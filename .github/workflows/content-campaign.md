@@ -12,6 +12,7 @@ description: >
   Agent 2 to inject into issues and Agent 3 to bundle PRs.
   Stops immediately if an open catalog-tracking PR already exists for this
   intent to avoid duplicates.
+name: Content Campaign (Agent 1)
 
 on:
   workflow_dispatch:
@@ -90,7 +91,7 @@ steps:
 tools:
   github:
     toolsets: [default]
-    github-token: "${{ secrets.TINA_GITHUB_PAT }}"
+    github-token: "${{ secrets.CONTENTHAWK_GITHUB_PAT }}"
   tavily:
     tools: [search, search_news]
 
@@ -127,14 +128,6 @@ post-steps:
       else
         echo "_No agent output directory found._" >> "$GITHUB_STEP_SUMMARY"
       fi
-
-  - name: Upload Agent Artifacts
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: contenthawk-agent1-results
-      path: /tmp/gh-aw/
-      retention-days: 7
 ---
 
 ## Important context
@@ -247,7 +240,7 @@ For example: `.github/ContentHawk/TODO/2026-03-05_Snapshot_archive-legacy-rules.
 The file must follow this **exact** structure:
 
 ```markdown
-# Content Catalog Snapshot
+# Content Campaign
 
 ## Agent Configuration
 
