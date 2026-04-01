@@ -38,7 +38,7 @@ Create a **personal access token (fine granined)** scoped to the repository you 
 
 Store this token in a **repository secret** named:
 
-- **`TINA_GITHUB_PAT`**
+- **`CONTENTHAWK_GITHUB_PAT`**
 
 *(Settings → Secrets and variables → Actions → New repository secret.)*
 
