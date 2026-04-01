@@ -77,11 +77,11 @@ After completing these steps, the ContentHawk workflows in the copied `.github` 
 
 The pipeline runs in four stages. Run them in order; **content-judge-pr** is triggered automatically by **content-judge**, so you only manually run three workflows.
 
-**Flow:** `content-catalog` → `content-judge` → `content-judge-pr (auto)`  → `content-fixer`
+**Flow:** `content-campaign` → `content-judge` → `content-judge-pr (auto)`  → `content-fixer`
 
 ### 1. Content Catalog (Agent 1)
 
-**Workflow:** `content-catalog`  
+**Workflow:** `content-campaign`  
 **Actions → Content Catalog → Run workflow**
 
 Creates a snapshot of content to audit, a custom label, and opens a pull request.
