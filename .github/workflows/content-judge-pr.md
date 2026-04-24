@@ -46,6 +46,7 @@ concurrency:
   cancel-in-progress: true
 
 safe-outputs:
+  report-failure-as-issue: false
   create-pull-request:
     title-prefix: "[Content Judge] "
     labels: ["${{ inputs.label_name }}"]
@@ -186,7 +187,7 @@ The `## Agent Configuration` table must be preserved entirely unchanged.
 Create a new branch from `main` named:
 
 ```
-ContentHawk/judge/${{ inputs.label_name }}
+ContentHawk/judge/${{ inputs.label_name }}${{ github.run_id }}
 ```
 
 Commit the updated snapshot file from Step 3 to this branch. The commit message must be:

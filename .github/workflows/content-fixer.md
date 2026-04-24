@@ -12,13 +12,46 @@ description: >
 name: Content Fixer (Agent 3a)
 
 on:
+
   schedule:
-    - cron: "0 * * * */7"
+    - cron: "0 0 * * */7"
+  skip-if-no-match: 'is:issue is:open in:body "gh-aw-workflow-id: content-judge"'
   workflow_dispatch:
+  steps:
+    - name: Find first snapshot
+      id: snapshot_check
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.CONTENTHAWK_GITHUB_PAT }}
+        script: |
+          let files = [];
+          try {
+            const { data } = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: '.github/ContentHawk/TODO',
+            });
+            files = data;
+          } catch (e) {
+            core.setOutput('snapshot_exists', 'false');
+            return;
+          }
+          if (files.length === 0) {
+            core.setOutput('snapshot_exists', 'false');
+            return;
+          }
+          core.setOutput('snapshot_exists', 'true');
+
+jobs:
+  pre-activation:
+    outputs:
+      snapshot_exists: ${{ steps.snapshot_check.outputs.snapshot_exists }}
+
+if: needs.pre_activation.outputs.snapshot_exists == 'true'
 
 engine:
   id: copilot
-  model: gpt-5-mini
+  model: claude-sonnet-4.6
 
 mcp-servers:
   tavily:
@@ -48,6 +81,7 @@ concurrency:
   cancel-in-progress: true
 
 safe-outputs:
+  report-failure-as-issue: false
   create-pull-request:
     title-prefix: "[Content Fixer] "
     max: 5
@@ -57,8 +91,6 @@ tools:
     lockdown: false
     toolsets: [issues, repos, pull_requests, search, labels]
     github-token: "${{ secrets.CONTENTHAWK_GITHUB_PAT }}"
-  tavily:
-    tools: [search, search_news]
 
 post-steps:
   - name: Workflow Summary
@@ -102,14 +134,6 @@ This workflow runs on a **cron schedule** (every 6 hours) and can also be trigge
 
 ---
 
-### Step 0 — Guard: find the first available snapshot
-
-Use the MCP script `list-snapshots` to list all snapshot files in `.github/ContentHawk/TODO/`.
-
-If the result is **empty** (no snapshot files found), **stop immediately** with a message:
-
-> No snapshot files found in `.github/ContentHawk/TODO/`. Nothing to process. Exiting.
-
 Do **not** create any PRs. End the workflow here.
 
 If files are found, **choose `snapshot_path`** — use the **first line** of the result (the oldest snapshot, i.e. the one that has been waiting longest). Read the full content of that file from `main`.
@@ -140,7 +164,17 @@ If `snapshot_issue_numbers` is empty, **stop immediately** with a message:
 
 > No issues found in the snapshot file. Nothing to fix. Exiting.
 
-#### 2b. Fetch issue details and filter to open issues
+#### 2b. Filter out issues already referenced in open pull requests
+
+For each issue number in `snapshot_issue_numbers`, use the GitHub `pull_requests` toolset to search for **open** pull requests in this repository whose body contains `#<number>` (e.g. `#42` for issue 42).
+
+If **any** open PR is found that references the issue number in its body, **remove that issue number** from `snapshot_issue_numbers` — it is already being addressed by an in-flight PR.
+
+If `snapshot_issue_numbers` is empty after filtering, **stop immediately** with a message:
+
+> All issues in the snapshot are already referenced in open pull requests. Nothing to fix. Exiting.
+
+#### 2c. Fetch issue details and filter to open issues
 
 For each issue number in `snapshot_issue_numbers`, fetch the issue from GitHub. Only include issues that are **open** — closed issues have already been resolved and should be skipped. For each open issue, record:
 
