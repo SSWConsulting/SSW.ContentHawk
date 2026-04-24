@@ -65,7 +65,7 @@ Add a **repository secret** named:
 | Secret name           | Description |
 |-----------------------|-------------|
 | `COPILOT_GITHUB_TOKEN` | Read-only fine-grained token with Copilot Requests; public repo access is fine. |
-| `TINA_GITHUB_PAT`      | Personal access token with Actions (read/write), Contents (read), Issues (read/write), Metadata (read). |
+| `CONTENTHAWK_GITHUB_PAT`      | Personal access token with Actions (read/write), Contents (read), Issues (read/write), Metadata (read). |
 | `TAVILY_API_KEY`       | Tavily API Key |
 
 After completing these steps, the ContentHawk workflows in the copied `.github` folder can run in your repository.
