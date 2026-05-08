@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"1cb34d5a4ac029342debf3fc8006feba8793768c4c329dc07a117e34a588bffc","compiler_version":"v0.68.3","strict":true,"agent_id":"copilot","agent_model":"gpt-5-mini"}
-# gh-aw-manifest: {"version":1,"secrets":["CONTENTHAWK_GITHUB_PAT","COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN","TAVILY_API_KEY"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"53b83947a5a98c8d113130e565377fae1a50d02f","version":"v6.3.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"ba90f2186d7ad780ec640f364005fa24e797b360","version":"v0.68.3"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.20"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.20"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.20"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.2.19"},{"image":"ghcr.io/github/github-mcp-server:v0.32.0"},{"image":"node:lts-alpine"}]}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"1f2d2036a6ae029a3987b2f16859671e1d82816b92a4fa0875172fe42dbf9f93","compiler_version":"v0.68.3","strict":true,"agent_id":"copilot","agent_model":"gpt-5-mini"}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN","TAVILY_API_KEY"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"373c709c69115d41ff229c7e5df9f8788daa9553","version":"v9"},{"repo":"actions/setup-node","sha":"53b83947a5a98c8d113130e565377fae1a50d02f","version":"v6.3.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7"},{"repo":"github/gh-aw-actions/setup","sha":"ba90f2186d7ad780ec640f364005fa24e797b360","version":"v0.68.3"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.20"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.20"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.20"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.2.19"},{"image":"ghcr.io/github/github-mcp-server:v0.32.0"},{"image":"node:lts-alpine"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
 #  | |_| | __ _  ___ _ __ | |_ _  ___ 
@@ -25,7 +25,6 @@
 # Agent 2a (Judge) of the ContentHawk pipeline. Runs on a cron schedule (or manually) and picks up the first available snapshot from the TODO folder. Reads the snapshot to obtain the Label, Intent, and Issue Preferences, then iterates over every pending row in order. For each file it reads the content, judges whether the file needs action based on the Intent captured by Agent 1, and opens a labelled GitHub issue for files that need fixing. After all affordable rows have been processed a post-step dispatches Agent 2b (content-judge-pr) which reads the created issues and opens a pull request to update the snapshot. Stops immediately if the number of open labelled issues already meets or exceeds max_open_issues without making any changes.
 #
 # Secrets used:
-#   - CONTENTHAWK_GITHUB_PAT
 #   - COPILOT_GITHUB_TOKEN
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
 #   - GH_AW_GITHUB_TOKEN
@@ -168,14 +167,14 @@ jobs:
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_a365b6a82ffa4121_EOF'
+          cat << 'GH_AW_PROMPT_0d85313318a91cee_EOF'
           <system>
-          GH_AW_PROMPT_a365b6a82ffa4121_EOF
+          GH_AW_PROMPT_0d85313318a91cee_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_a365b6a82ffa4121_EOF'
+          cat << 'GH_AW_PROMPT_0d85313318a91cee_EOF'
           <safe-output-tools>
           Tools: create_issue(max:30), missing_tool, missing_data, noop
           </safe-output-tools>
@@ -207,12 +206,12 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_a365b6a82ffa4121_EOF
+          GH_AW_PROMPT_0d85313318a91cee_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_a365b6a82ffa4121_EOF'
+          cat << 'GH_AW_PROMPT_0d85313318a91cee_EOF'
           </system>
           {{#runtime-import .github/workflows/content-judge.md}}
-          GH_AW_PROMPT_a365b6a82ffa4121_EOF
+          GH_AW_PROMPT_0d85313318a91cee_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
@@ -389,9 +388,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_cbab00c778525b78_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_2e368520b8bf52bc_EOF'
           {"create_issue":{"max":30,"title_prefix":"🦅 ContentHawk - Content Audit: "},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_cbab00c778525b78_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_2e368520b8bf52bc_EOF
       - name: Write Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -561,7 +560,7 @@ jobs:
       - name: Write MCP Scripts Config
         run: |
           mkdir -p "${RUNNER_TEMP}/gh-aw/mcp-scripts/logs"
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/tools.json" << 'GH_AW_MCP_SCRIPTS_TOOLS_12ab5789b42dcdb1_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/tools.json" << 'GH_AW_MCP_SCRIPTS_TOOLS_ffbc98d0b011f521_EOF'
           {
             "serverName": "mcpscripts",
             "version": "1.0.0",
@@ -579,8 +578,8 @@ jobs:
               }
             ]
           }
-          GH_AW_MCP_SCRIPTS_TOOLS_12ab5789b42dcdb1_EOF
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs" << 'GH_AW_MCP_SCRIPTS_SERVER_f37086f43f843dda_EOF'
+          GH_AW_MCP_SCRIPTS_TOOLS_ffbc98d0b011f521_EOF
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs" << 'GH_AW_MCP_SCRIPTS_SERVER_863f0b0bccadd40f_EOF'
             const path = require("path");
             const { startHttpServer } = require("./mcp_scripts_mcp_server_http.cjs");
             const configPath = path.join(__dirname, "tools.json");
@@ -594,12 +593,12 @@ jobs:
               console.error("Failed to start mcp-scripts HTTP server:", error);
               process.exit(1);
             });
-          GH_AW_MCP_SCRIPTS_SERVER_f37086f43f843dda_EOF
+          GH_AW_MCP_SCRIPTS_SERVER_863f0b0bccadd40f_EOF
           chmod +x "${RUNNER_TEMP}/gh-aw/mcp-scripts/mcp-server.cjs"
           
       - name: Write MCP Scripts Tool Files
         run: |
-          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/list-snapshots.sh" << 'GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_7829820f79603a57_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/mcp-scripts/list-snapshots.sh" << 'GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_772b7b122a3c987d_EOF'
           #!/bin/bash
           # Auto-generated mcp-script tool: list-snapshots
           # Lists all snapshot files in the TODO folder, sorted oldest-first so the first line is the next snapshot to process.
@@ -609,7 +608,7 @@ jobs:
           ls .github/ContentHawk/TODO/*_Snapshot_*.md 2>/dev/null | sort
           
           
-          GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_7829820f79603a57_EOF
+          GH_AW_MCP_SCRIPTS_SH_LIST-SNAPSHOTS_772b7b122a3c987d_EOF
           chmod +x "${RUNNER_TEMP}/gh-aw/mcp-scripts/list-snapshots.sh"
           
       - name: Generate MCP Scripts Server Config
@@ -654,7 +653,7 @@ jobs:
           GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-start.outputs.port }}
           GITHUB_MCP_GUARD_MIN_INTEGRITY: ${{ steps.determine-automatic-lockdown.outputs.min_integrity }}
           GITHUB_MCP_GUARD_REPOS: ${{ steps.determine-automatic-lockdown.outputs.repos }}
-          GITHUB_MCP_SERVER_TOKEN: ${{ secrets.CONTENTHAWK_GITHUB_PAT }}
+          GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
           set -eo pipefail
@@ -675,7 +674,7 @@ jobs:
           export MCP_GATEWAY_DOCKER_COMMAND='docker run -i --rm --network host -v /var/run/docker.sock:/var/run/docker.sock -e MCP_GATEWAY_PORT -e MCP_GATEWAY_DOMAIN -e MCP_GATEWAY_API_KEY -e MCP_GATEWAY_PAYLOAD_DIR -e MCP_GATEWAY_PAYLOAD_SIZE_THRESHOLD -e DEBUG -e MCP_GATEWAY_LOG_DIR -e GH_AW_MCP_LOG_DIR -e GH_AW_SAFE_OUTPUTS -e GH_AW_SAFE_OUTPUTS_CONFIG_PATH -e GH_AW_SAFE_OUTPUTS_TOOLS_PATH -e GH_AW_ASSETS_BRANCH -e GH_AW_ASSETS_MAX_SIZE_KB -e GH_AW_ASSETS_ALLOWED_EXTS -e DEFAULT_BRANCH -e GITHUB_MCP_SERVER_TOKEN -e GITHUB_MCP_GUARD_MIN_INTEGRITY -e GITHUB_MCP_GUARD_REPOS -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA -e GITHUB_WORKSPACE -e GITHUB_TOKEN -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e GITHUB_JOB -e GITHUB_ACTION -e GITHUB_EVENT_NAME -e GITHUB_EVENT_PATH -e GITHUB_ACTOR -e GITHUB_ACTOR_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKFLOW -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REF -e GITHUB_REF_NAME -e GITHUB_REF_TYPE -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GH_AW_MCP_SCRIPTS_PORT -e GH_AW_MCP_SCRIPTS_API_KEY -e GH_AW_SAFE_OUTPUTS_PORT -e GH_AW_SAFE_OUTPUTS_API_KEY -e TAVILY_API_KEY -v /tmp/gh-aw/mcp-payloads:/tmp/gh-aw/mcp-payloads:rw -v /opt:/opt:ro -v /tmp:/tmp:rw -v '"${GITHUB_WORKSPACE}"':'"${GITHUB_WORKSPACE}"':rw ghcr.io/github/gh-aw-mcpg:v0.2.19'
           
           mkdir -p /home/runner/.copilot
-          cat << GH_AW_MCP_CONFIG_9b4126c8d18e82cd_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
+          cat << GH_AW_MCP_CONFIG_5fd23d564bbbe4ed_EOF | bash "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.sh"
           {
             "mcpServers": {
               "github": {
@@ -753,7 +752,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_9b4126c8d18e82cd_EOF
+          GH_AW_MCP_CONFIG_5fd23d564bbbe4ed_EOF
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -785,7 +784,7 @@ jobs:
           GITHUB_API_URL: ${{ github.api_url }}
           GITHUB_AW: true
           GITHUB_HEAD_REF: ${{ github.head_ref }}
-          GITHUB_MCP_SERVER_TOKEN: ${{ secrets.CONTENTHAWK_GITHUB_PAT }}
+          GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_STEP_SUMMARY: /tmp/gh-aw/agent-step-summary.md
@@ -836,8 +835,7 @@ jobs:
             const { main } = require('${{ runner.temp }}/gh-aw/actions/redact_secrets.cjs');
             await main();
         env:
-          GH_AW_SECRET_NAMES: 'CONTENTHAWK_GITHUB_PAT,COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN,TAVILY_API_KEY'
-          SECRET_CONTENTHAWK_GITHUB_PAT: ${{ secrets.CONTENTHAWK_GITHUB_PAT }}
+          GH_AW_SECRET_NAMES: 'COPILOT_GITHUB_TOKEN,GH_AW_GITHUB_MCP_SERVER_TOKEN,GH_AW_GITHUB_TOKEN,GITHUB_TOKEN,TAVILY_API_KEY'
           SECRET_COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           SECRET_GH_AW_GITHUB_MCP_SERVER_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}
           SECRET_GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
@@ -944,21 +942,17 @@ jobs:
         run: "LABEL_NAME=\"\"\nif [ -f /tmp/gh-aw/label_name.txt ]; then\n  LABEL_NAME=$(cat /tmp/gh-aw/label_name.txt | tr -d '[:space:]')\nfi\n\necho \"## ContentHawk — Agent 2 (Judge)\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Run Info\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Field              | Value |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"|--------------------|-------|\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Event              | \\`${{ github.event_name }}\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Label              | \\`${LABEL_NAME:-<not resolved>}\\` |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"| Max Open Issues    | 30 |\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\n\necho \"### Agent Output\" >> \"$GITHUB_STEP_SUMMARY\"\necho \"\" >> \"$GITHUB_STEP_SUMMARY\"\nif [ -d /tmp/gh-aw ]; then\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\n  find /tmp/gh-aw -type f | head -30 >> \"$GITHUB_STEP_SUMMARY\"\n  echo \"\\`\\`\\`\" >> \"$GITHUB_STEP_SUMMARY\"\nelse\n  echo \"_No agent output directory found._\" >> \"$GITHUB_STEP_SUMMARY\"\nfi\n"
       - if: always() && steps.noop-check.outputs.did_work == 'true'
         name: Ensure skipped files artifact is readable
-        run: chmod a+r /tmp/gh-aw/skipped_files.txt 2>/dev/null || true
+        run: chmod a+r /tmp/gh-aw/skipped_files.txt /tmp/gh-aw/label_name.txt 2>/dev/null || true
       - if: always() && steps.noop-check.outputs.did_work == 'true'
         name: Upload Agent Artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: error
           name: ${{ github.run_id }}
-          path: /tmp/gh-aw/skipped_files.txt
+          path: |
+            /tmp/gh-aw/skipped_files.txt
+            /tmp/gh-aw/label_name.txt
           retention-days: 7
-      - env:
-          GH_TOKEN: ${{ secrets.CONTENTHAWK_GITHUB_PAT }}
-          INPUT_JUDGE_RUN_ID: ${{ github.run_id }}
-        if: success() && steps.noop-check.outputs.did_work == 'true'
-        name: Trigger Agent 2b (PR Creator)
-        run: "set -euo pipefail\n\n# Read the label written by the agent\nLABEL_NAME=\"\"\nif [ -f /tmp/gh-aw/label_name.txt ]; then\n  LABEL_NAME=$(cat /tmp/gh-aw/label_name.txt | tr -d '[:space:]')\nfi\nif [ -z \"$LABEL_NAME\" ]; then\n  echo \"::error::Agent did not write a label to /tmp/gh-aw/label_name.txt — cannot trigger Agent 2b.\"\n  exit 1\nfi\n\ngit fetch origin main --depth 1\n# Snapshot path convention (Agent 1): .github/ContentHawk/TODO/YYYY-MM-DD_Snapshot_<label>.md\n_matches=()\nwhile IFS= read -r _path; do\n  case \"$_path\" in\n    .github/ContentHawk/TODO/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_Snapshot_${LABEL_NAME}.md)\n      _matches+=(\"$_path\") ;;\n  esac\ndone < <(git ls-tree -r origin/main --name-only | grep '^\\.github/ContentHawk/TODO/' || true)\nSNAPSHOT_PATH=$(printf '%s\\n' \"${_matches[@]:-}\" | sort -r | head -1)\nif [ -z \"$SNAPSHOT_PATH\" ]; then\n  echo \"::error::No snapshot on main matching <date>_Snapshot_${LABEL_NAME}.md under .github/ContentHawk/TODO/\"\n  exit 1\nfi\necho \"Resolved snapshot: $SNAPSHOT_PATH\"\ngh workflow run content-judge-pr.lock.yml \\\n  -f snapshot_path=\"$SNAPSHOT_PATH\" \\\n  -f label_name=\"$LABEL_NAME\" \\\n  -f judge_run_id=\"$INPUT_JUDGE_RUN_ID\""
 
       - name: Upload agent artifacts
         if: always()
