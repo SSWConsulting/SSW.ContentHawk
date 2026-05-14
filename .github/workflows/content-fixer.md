@@ -34,16 +34,13 @@ on:
             });
             files = data;
           } catch (e) {
-            console.log('TODO folder not found or inaccessible', e.message);
             core.setOutput('snapshot_exists', 'false');
             return;
           }
           if (files.length === 0) {
             core.setOutput('snapshot_exists', 'false');
-            console.log('No snapshot files found in TODO folder.');
             return;
           }
-          console.log('success')
           core.setOutput('snapshot_exists', 'true');
 
 jobs:
