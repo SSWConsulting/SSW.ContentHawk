@@ -25,7 +25,6 @@ on:
   workflow_run:
     workflows: ["Content Judge (Agent 2a)"]
     types: [completed]
-    # conclusion: [success]
     branches:
       - main
 
