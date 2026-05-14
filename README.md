@@ -8,6 +8,8 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ## Installing ContentHawk
 
+### Option 1: Use the installer skill (recommended)
+
 1. The ContentHawk installer can be downloaded using [npx skills](https://github.com/vercel-labs/skills). Run the command below to get the installer:
 
 ```bash
@@ -30,14 +32,13 @@ npx skills add -g SSWConsulting/SSW.ContentHawk
 ---
 
 
+### Option 2: Manual installation
 
-## Setup Instructions
-
-### 1. Copy the `.github` folder
+#### 1. Copy the `.github` folder
 
 Copy the **entire `.github` folder** from this repository into the root of the repository you want to audit. This folder contains the workflows and configuration required for the ContentHawk pipeline.
 
-### 2. Copilot: fine-grained access token
+#### 2. Copilot: fine-grained access token
 
 Create a **read-only, fine-grained personal access token** with:
 
@@ -50,7 +51,7 @@ Store this token in a **repository secret** named:
 
 *(Settings → Secrets and variables → Actions → New repository secret.)*
 
-### 4. Workflow permissions
+#### 4. Workflow permissions
 
 In the repository you are auditing:
 
@@ -59,7 +60,7 @@ In the repository you are auditing:
 
 Save the settings.
 
-### 5. Tavily API key
+#### 5. Tavily API key
 
 Add a **repository secret** named:
 
