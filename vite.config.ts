@@ -56,7 +56,7 @@ export default defineConfig(async () => {
     },
     generateBundle(_options, bundle) {
       for (const chunk of Object.values(bundle)) {
-        if ("code" in chunk && chunk.fileName === "install-env.js") {
+        if ("code" in chunk && chunk.fileName === "install.js") {
           // Replace the dev shebang from the source with the node one.
           // Using banner: causes a rolldown bug that truncates the output.
           chunk.code = chunk.code.replace(/^#!.*\n/, "#!/usr/bin/env node\n");
@@ -77,7 +77,7 @@ export default defineConfig(async () => {
   return {
     plugins: [inlineAssets, react()],
     build: {
-      outDir: "ssw-contenthawk/commands/scripts",
+      outDir: "ssw-contenthawk/skills/install/scripts",
       target: "node18",
       ssr: "scripts/install.ts",
       rollupOptions: {

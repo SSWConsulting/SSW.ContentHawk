@@ -119,3 +119,16 @@ Groups open issues with the label into bundles and opens fix PRs that implement 
 
 
 Run this after the judge has created issues and you have merged the judge PR. You can run it multiple times as more issues are created or merged.
+
+---
+
+## Publishing a new version of the installer
+
+The installer ships as both a Claude/AI **skill** (`ssw-contenthawk/skills/install/SKILL.md`) and an npm-published CLI (`npx ssw-contenthawk <owner/repo>`). The skill body instructs the agent to run the `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out.
+
+To cut a new release:
+
+1. Bump `version` in `package.json` (and `ssw-contenthawk/.claude-plugin/plugin.json` if you want the plugin metadata to match).
+2. Run `npm run build` to produce the bundled `install.js` under `ssw-contenthawk/skills/install/scripts/`.
+3. Run `npm publish` to push to npm. From then on `npx ssw-contenthawk@latest <owner/repo>` resolves to the new version.
+4. Commit the built artefacts to `main` so the in-repo skill stays in sync.
