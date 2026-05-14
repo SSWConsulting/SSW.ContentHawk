@@ -25,23 +25,6 @@ Store this token in a **repository secret** named:
 
 *(Settings → Secrets and variables → Actions → New repository secret.)*
 
-### 3. Personal access token (installation repo)
-
-Create a **personal access token (fine granined)** scoped to the repository you are auditing with these permissions:
-
-| Permission | Access   |
-|-----------|----------|
-| Actions   | Read and write |
-| Contents  | Read only      |
-| Issues    | Read and write |
-| Metadata  | Read only      |
-
-Store this token in a **repository secret** named:
-
-- **`CONTENTHAWK_GITHUB_PAT`**
-
-*(Settings → Secrets and variables → Actions → New repository secret.)*
-
 ### 4. Workflow permissions
 
 In the repository you are auditing:
