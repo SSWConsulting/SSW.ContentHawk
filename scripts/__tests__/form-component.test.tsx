@@ -258,6 +258,38 @@ describe("GitHub Secrets tab", () => {
     expect(secondInput).toBeDisabled();
   });
 
+  it("shows a no-changes message when the workflow stream emits the no-changes event", async () => {
+    // ARRANGE
+    vi.mocked(service.getExistingSecrets).mockResolvedValue([...SECRETS]);
+    vi.mocked(service.getBranchStatus).mockResolvedValue(false);
+
+    const mockEs = new EventTarget() as EventTarget & { close: () => void };
+    mockEs.close = vi.fn();
+    vi.mocked(service.createWorkflowStream).mockReturnValue(mockEs as unknown as EventSource);
+
+    await renderAndOpenSecrets();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument()
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Next: Set up Workflows/ }));
+
+    // ACT
+    await userEvent.click(screen.getByRole("button", { name: "Set up Workflows" }));
+
+    await act(async () => {
+      mockEs.dispatchEvent(new Event("no-changes"));
+    });
+
+    // ASSERT
+    await waitFor(() => {
+      expect(screen.getByText(/No changes to commit/i)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Set up Workflows" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Restart Installation" })).not.toBeInTheDocument();
+    });
+    expect(mockEs.close).toHaveBeenCalled();
+    expect(service.killServer).toHaveBeenCalled();
+  });
+
   it("shows an error banner and keeps submit active when a secret fails", async () => {
     // ARRANGE
     const results = {
