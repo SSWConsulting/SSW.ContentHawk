@@ -123,11 +123,27 @@ function gitRun(args: string[], cwd: string, onLine: (l: string) => void): Promi
 }
 
 function createPR(targetRepo: string, branch: string, cwd: string, onLine: (l: string) => void): Promise<void> {
+  const body = [
+    "## 🦅 ContentHawk Installation",
+    "",
+    "This pull request installs [ContentHawk](https://github.com/SSWConsulting/SSW.ContentHawk) into this repository.",
+    "",
+    "### What's included",
+    "- `.github/workflows/` — ContentHawk GitHub Actions workflows",
+    "- `.github/actions/guard-open-pr/` — supporting composite action",
+    "- `.contenthawk-version` — pinned ContentHawk version for this repo",
+    "",
+    "### Source",
+    "Files were copied from [SSWConsulting/SSW.ContentHawk](https://github.com/SSWConsulting/SSW.ContentHawk) and compiled with `gh aw compile`.",
+    "",
+    "### Next steps",
+    "Review the changes, then merge to enable ContentHawk on this repo.",
+  ].join("\n");
   return new Promise((resolve, reject) => {
     const child = spawn("gh", [
       "pr", "create",
-      "--title", "Add ContentHawk GitHub Actions workflows",
-      "--body", "Copies workflow files from SSWConsulting/SSW.ContentHawk and compiles them.",
+      "--title", "🦅 Installing ContentHawk",
+      "--body", body,
       "--repo", targetRepo,
     ], { cwd });
     child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
@@ -288,7 +304,7 @@ async function main() {
         }
 
         log("Cloning SSWConsulting/SSW.ContentHawk…");
-        await sparseClone("SSWConsulting/SSW.ContentHawk", contentHawkDir, [".github/workflows", ".github/actions/guard-open-pr"], sendLine);
+        await sparseClone("SSWConsulting/SSW.ContentHawk", contentHawkDir, [".github/workflows", ".github/actions/guard-open-pr", ".contenthawk-version"], sendLine);
 
         log(`Cloning ${targetRepo}…`);
         await sparseClone(targetRepo, targetDir, [".github"], sendLine);
@@ -309,6 +325,10 @@ async function main() {
         await fs.copyFile(actionSrc, actionDest);
         log("  Copied action.yml");
 
+        log("Copying .contenthawk-version…");
+        await fs.copyFile(path.join(contentHawkDir, ".contenthawk-version"), path.join(targetDir, ".contenthawk-version"));
+        log("  Copied .contenthawk-version");
+
         log("Running gh aw compile…");
         await compileWorkflows(targetDir, sendLine);
 
@@ -316,7 +336,7 @@ async function main() {
         await gitRun(["checkout", "-b", CONTENTHAWK_INSTALL_BRANCH], targetDir, sendLine);
 
         log("Staging changes…");
-        await gitRun(["add", ".github/"], targetDir, sendLine);
+        await gitRun(["add", ".github/", ".contenthawk-version"], targetDir, sendLine);
 
         log("Committing…");
         await gitRun(["commit", "-m", "Add ContentHawk GitHub Actions workflows"], targetDir, sendLine);
