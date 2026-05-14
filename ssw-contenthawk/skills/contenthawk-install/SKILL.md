@@ -1,5 +1,5 @@
 ---
-name: install
+name: contenthawk-install
 description: Install SSW ContentHawk on a target GitHub repository by setting the required GitHub Actions secrets. Use when the user wants to set up, install, or configure ContentHawk on a GitHub repo, or asks to add ContentHawk secrets to a repository.
 ---
 
