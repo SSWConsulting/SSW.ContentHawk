@@ -6,6 +6,32 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ---
 
+## Installing ContentHawk
+
+1. The ContentHawk installer can be downloaded using [npx skills](https://github.com/vercel-labs/skills). Run the command below to get the installer:
+
+```bash
+npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
+```
+
+> Altenatively, you can install the skill directly for your your agent of choice like. The Example below showes you how to install the skill for claude.
+> ```bash
+> npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
+> ```
+
+
+2. Once you've added the installation skill, you can run it with the commande below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
+
+```bash
+/contenthawk-install
+```
+
+3. Follow along with the installer instructions to complete the setup. The installer will copy the required workflows and configuration files to your repository and set up secrets.
+
+---
+
+
+
 ## Setup Instructions
 
 ### 1. Copy the `.github` folder
