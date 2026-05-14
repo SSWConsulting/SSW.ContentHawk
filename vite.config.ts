@@ -77,7 +77,7 @@ export default defineConfig(async () => {
   return {
     plugins: [inlineAssets, react()],
     build: {
-      outDir: "ssw-contenthawk/skills/install/scripts",
+      outDir: "dist",
       target: "node18",
       ssr: "scripts/install.ts",
       rollupOptions: {
