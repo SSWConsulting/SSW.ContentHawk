@@ -14,5 +14,4 @@ ContentHawk is a GitHub Actions pipeline for auditing repository content. Instal
 3. **Verify the correct agentic workflows CLI is installed** run `gh aw --version`. Ensure the version matches the one specified in `github/gh-aw-actions` `https://raw.githubusercontent.com/SSWConsulting/SSW.ContentHawk/refs/heads/main/.github/aw/actions-lock.json`. If the CLI fails tell the user to install the correct version from listed from the `actions-lock.json` and stop.
 4. **Run the installer.** Run `npx ssw.contenthawk@latest <owner/repo>`.
 
-The installer starts a local form server on `127.0.0.1`, prints a `http://127.0.0.1:<port>/?token=...` URL on stderr, and opens it in the user's browser. Secrets never appear in the transcript — they're entered into password fields and POSTed to localhost only.
-<!-- The script blocks until the form is submitted, then prints `Set: ...`, `Skipped (empty): ...`, and/or `Failed: ...` lines and exits. Report those results back to the user verbatim. -->
+The installer starts a local form server on `127.0.0.1`, prints a `http://127.0.0.1:<port>/?token=...` URL on stderr, and opens it in the user's browser. When the process exits tell the thank the user for running the installer and tell them to re-run the skill if any issues occurred.
