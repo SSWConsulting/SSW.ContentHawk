@@ -12,14 +12,14 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ```bash
 npx skills add -g SSWConsulting/SSW.ContentHawk
-
+```
 > Altenatively, you can install the skill directly for your your agent of choice like. The Example below showes you how to install the skill for claude.
 > ```bash
 > npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
 > ```
 
 
-2. Once you've added the installation skill, you can run it with the commande below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
+2. Once you've added the installation skill, you can run it with the command below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
 
 ```bash
 /contenthawk-install
