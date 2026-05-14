@@ -3,20 +3,20 @@
     "access": "public"
   },
   "name": "ssw-contenthawk",
-  "version": "0.1.0",
+  "version": "0.1.10",
   "description": "Installer and Claude skill for SSW ContentHawk — sets the GitHub Actions secrets required to run the ContentHawk content-audit pipeline on a target repo.",
   "bin": {
-    "ssw-contenthawk": "ssw-contenthawk/skills/install/scripts/install.js"
+    "ssw-contenthawk": "dist/install.js"
   },
   "files": [
-    "ssw-contenthawk/skills/install/scripts/install.js",
-    "ssw-contenthawk/skills/install/scripts/form.css"
+    "dist/install.js",
+    "dist/form.css"
   ],
   "scripts": {
     "build": "vite build",
     "test": "vitest",
     "dev": "npx tsx scripts/install.ts",
-    "start": "node ssw-contenthawk/skills/install/scripts/install.js",
+    "start": "node dist/install.js",
     "run-workflow": "npx tsx scripts/run-workflow.ts"
   },
   "dependencies": {
