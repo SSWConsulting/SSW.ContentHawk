@@ -338,6 +338,12 @@ async function main() {
         log("Staging changes…");
         await gitRun(["add", ".github/", ".contenthawk-version"], targetDir, sendLine);
 
+        const hasChanges = spawnSync("git", ["diff", "--cached", "--quiet"], { cwd: targetDir }).status !== 0;
+        if (!hasChanges) {
+          res.write("event: no-changes\ndata: {}\n\n");
+          return;
+        }
+
         log("Committing…");
         await gitRun(["commit", "-m", "Add ContentHawk GitHub Actions workflows"], targetDir, sendLine);
 

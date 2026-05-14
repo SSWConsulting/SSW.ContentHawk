@@ -24,7 +24,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [statuses, setStatuses] = useState<Record<string, SecretResult>>({});
   type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
-  const [workflowStatus, setWorkflowStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [workflowStatus, setWorkflowStatus] = useState<"idle" | "running" | "done" | "error" | "no-changes">("idle");
   const [workflowLog, setWorkflowLog] = useState<LogEvent[]>([]);
   const [prUrl, setPrUrl] = useState<string | null>(null);
   const [branchStatus, setBranchStatus] = useState<"checking" | "exists" | "clear">("checking");
@@ -60,6 +60,11 @@ export function FormContent({ targetRepo, token }: FormProps) {
       es.close();
       setWorkflowStatus("done");
       setBranchStatus("exists");
+      killServer();
+    });
+    es.addEventListener("no-changes", () => {
+      es.close();
+      setWorkflowStatus("no-changes");
       killServer();
     });
     es.addEventListener("failed", (e: Event) => {
@@ -245,12 +250,12 @@ export function FormContent({ targetRepo, token }: FormProps) {
             <Button disabled>Setting up…</Button>
           ) : branchStatus === "checking" ? (
             <p className="text-sm text-[#555]">Checking installation status…</p>
-          ) : branchStatus === "exists" && workflowStatus !== "done" ? (
+          ) : branchStatus === "exists" && workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
             <>
               <Message variant="info">An installation branch already exists: {CONTENTHAWK_INSTALL_BRANCH}.</Message>
               <Button variant="secondary" type="button" onClick={() => startWorkflow(true)}>Restart Installation</Button>
             </>
-          ) : workflowStatus !== "done" ? (
+          ) : workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
             <Button type="button" onClick={() => startWorkflow(false)}>Set up Workflows</Button>
           ) : null}
           {workflowLog.length > 0 && (
@@ -262,16 +267,26 @@ export function FormContent({ targetRepo, token }: FormProps) {
               )}
             </div>
           )}
-          { workflowStatus === "done" && (
+          {(workflowStatus === "done" || workflowStatus === "no-changes") && (
+            <p className="mt-2 text-sm text-[#555]">
+              The CLI has finished — you can safely close this tab.
+            </p>
+          )}
+          { (workflowStatus === "done" )  && (
             <>
               <p className="mt-2 text-sm font-semibold">
                 <span className="text-[#1a7f37]">✓ Pull request created successfully.{" "}</span>
                 {prUrl && <a role="link" href={prUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{prUrl}</a>}
               </p>
-              <p className="mt-2 text-sm text-[#555]">
-                The CLI has finished — you can safely close this tab.
-              </p>
+      
             </>
+          )}
+          {workflowStatus === "no-changes" && (
+            <div className="mt-4">
+              <Message variant="info">
+                No changes to commit — is ContentHawk workflows already match what's on your default branch.
+              </Message>
+            </div>
           )}
           {workflowStatus === "error" && (
             <p className="text-[#cf222e] mt-2 text-sm font-semibold">✗ Setup failed. See log above.</p>
