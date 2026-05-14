@@ -1,0 +1,10 @@
+{
+  "name": "ssw-consulting",
+  "owner": { "name": "SSW Consulting" },
+  "plugins": [
+    {
+      "name": "ssw-contenthawk",
+      "source": "./ssw-contenthawk"
+    }
+  ]
+}

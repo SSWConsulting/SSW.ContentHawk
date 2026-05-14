@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@source "./form-component.tsx";
+
+@layer components {
+.status { display: block; margin-top: .35rem; font-size: .85rem; }
+  .status.ok   { color: #1a7f37; }
+  .status.warn { color: #9a6700; }
+  .status.err  { color: #cf222e; }
+}
