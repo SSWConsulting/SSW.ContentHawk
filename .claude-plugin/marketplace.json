@@ -3,8 +3,8 @@
   "owner": { "name": "SSW Consulting" },
   "plugins": [
     {
-      "name": "ssw-contenthawk",
-      "source": "./ssw-contenthawk"
+      "name": "ssw.contenthawk",
+      "source": "./ssw.contenthawk"
     }
   ]
 }

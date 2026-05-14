@@ -1,5 +1,5 @@
 {
-  "name": "ssw-contenthawk",
+  "name": "ssw.contenthawk",
   "version": "0.1.0",
   "description": "A set of special commands for managing installations for SSW ContentHawk and performing actions with Claude Code.",
   "author": {
