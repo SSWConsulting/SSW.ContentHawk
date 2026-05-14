@@ -15,6 +15,12 @@ beforeEach(() => {
   vi.mocked(service.getBranchStatus).mockResolvedValue(false);
 });
 
+async function renderAndOpenSecrets() {
+  const result = render(<FormContent {...props} />);
+  await userEvent.click(screen.getByRole("button", { name: /Get Started/ }));
+  return result;
+}
+
 describe("GitHub Secrets tab", () => {
   it("shows loader while checking for existing secrets then hides it", async () => {
     // ARRANGE
@@ -38,7 +44,7 @@ describe("GitHub Secrets tab", () => {
     vi.mocked(service.getExistingSecrets).mockResolvedValue([SECRETS[0]]);
 
     // ACT
-    const { container } = render(<FormContent {...props} />);
+    const { container } = await renderAndOpenSecrets();
     await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
 
     // ASSERT
@@ -54,7 +60,7 @@ describe("GitHub Secrets tab", () => {
     vi.mocked(service.getExistingSecrets).mockResolvedValue([...SECRETS]);
 
     // ACT
-    render(<FormContent {...props} />);
+    await renderAndOpenSecrets();
 
     // ASSERT
     await waitFor(() => {
@@ -68,7 +74,7 @@ describe("GitHub Secrets tab", () => {
     const results = Object.fromEntries(SECRETS.map((s) => [s, "ok" as const]));
     vi.mocked(service.submitSecrets).mockResolvedValue(results);
 
-    render(<FormContent {...props} />);
+    await renderAndOpenSecrets();
     await waitFor(() => screen.getByRole("button", { name: "Submit" }));
 
     // ACT
@@ -87,7 +93,7 @@ describe("GitHub Secrets tab", () => {
       Object.fromEntries(SECRETS.map((s) => [s, "ok" as const]))
     );
 
-    const { container } = render(<FormContent {...props} />);
+    const { container } = await renderAndOpenSecrets();
     await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
 
     const tavilyInput = container.querySelector<HTMLInputElement>(`input[name="TAVILY_API_KEY"]`);
@@ -109,7 +115,7 @@ describe("GitHub Secrets tab", () => {
     vi.mocked(service.getExistingSecrets).mockResolvedValue([...SECRETS]);
     vi.mocked(service.getBranchStatus).mockResolvedValue(true);
 
-    render(<FormContent {...props} />);
+    await renderAndOpenSecrets();
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument()
     );
@@ -133,7 +139,7 @@ describe("GitHub Secrets tab", () => {
     mockEs.close = vi.fn();
     vi.mocked(service.createWorkflowStream).mockReturnValue(mockEs as unknown as EventSource);
 
-    render(<FormContent {...props} />);
+    await renderAndOpenSecrets();
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument()
     );
@@ -164,7 +170,7 @@ describe("GitHub Secrets tab", () => {
       Object.fromEntries(SECRETS.map((s) => [s, "ok" as const]))
     );
 
-    const { container } = render(<FormContent {...props} />);
+    const { container } = await renderAndOpenSecrets();
 
     await waitFor(() => {
       expect(screen.getAllByText("✓ Set")).toHaveLength(SECRETS.length);
@@ -199,7 +205,7 @@ describe("GitHub Secrets tab", () => {
 
     console.log("Mocked getExistingSecrets:", ...SECRETS.slice(1));
 
-    const { container } = render(<FormContent {...props} />);
+    const { container } = await renderAndOpenSecrets();
 
     const input = container.querySelector<HTMLInputElement>(`input[name="${SECRETS[0]}"]`);
 
@@ -230,7 +236,7 @@ describe("GitHub Secrets tab", () => {
     };
     vi.mocked(service.submitSecrets).mockResolvedValue(results);
 
-    render(<FormContent {...props} />);
+    await renderAndOpenSecrets();
     await waitFor(() => screen.getByRole("button", { name: "Submit" }));
 
     // ACT

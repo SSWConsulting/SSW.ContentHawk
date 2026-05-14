@@ -18,7 +18,7 @@ export interface FormProps {
 export function FormContent({ targetRepo, token }: FormProps) {
 
   const [loadingSecrets, setLoadingSecrets] = useState(true);
-  const [activeTab, setActiveTab] = useState<"secrets" | "workflows">("secrets");
+  const [activeTab, setActiveTab] = useState<"overview" | "secrets" | "workflows">("overview");
   const [submissionState, setSubmissionState] = useState<"idle" | "submitting" | "submitted">("idle");
   const [banner, setBanner] = useState<{ variant?: "success" | "warning" | "error" | "info"; msg: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -125,6 +125,12 @@ export function FormContent({ targetRepo, token }: FormProps) {
       <div className="flex border-b border-gray-200 mt-6 mb-6">
         <div
           role="tab"
+          className={`${tabBase} ${activeTab === "overview" ? tabActive : tabInactive}`}
+        >
+          Overview
+        </div>
+        <div
+          role="tab"
           className={`${tabBase} ${activeTab === "secrets" ? tabActive : tabInactive}`}
         >
           GitHub Secrets
@@ -136,6 +142,26 @@ export function FormContent({ targetRepo, token }: FormProps) {
           Workflows
         </div>
       </div>
+
+      {activeTab === "overview" && (
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Before you begin</h2>
+          <p className="text-sm text-[#555] mb-3">
+            The installer will perform a shallow clone of <span className="font-mono text-gray-800 bg-gray-100 px-1 rounded">{targetRepo}</span> into your current directory and complete the installation using local git commands. The end result will be a pull request opened against the default branch with the necessary workflows added.
+          </p>
+          <ul className="text-sm text-[#555] mb-4 list-disc pl-5 space-y-1">
+            <li>A shallow clone is created in your current working directory.</li>
+            <li>An installation branch is checked out and the ContentHawk workflows are added.</li>
+            <li>The branch is pushed and a pull request is opened against the default branch.</li>
+          </ul>
+          <p className="text-xs text-[#555] mb-4">
+            Make sure your current terminal directory is where you want the clone to live before continuing.
+          </p>
+          <Button type="button" onClick={() => setActiveTab("secrets")}>
+            Get Started →
+          </Button>
+        </div>
+      )}
 
       {activeTab === "secrets" && (
         <>
