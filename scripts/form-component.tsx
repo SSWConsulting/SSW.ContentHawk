@@ -263,10 +263,15 @@ export function FormContent({ targetRepo, token }: FormProps) {
             </div>
           )}
           { workflowStatus === "done" && (
-            <p className="mt-2 text-sm font-semibold">
-              <span className="text-[#1a7f37]">✓ Pull request created successfully.{" "}</span>
-              {prUrl && <a role="link" href={prUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{prUrl}</a>}
-            </p>
+            <>
+              <p className="mt-2 text-sm font-semibold">
+                <span className="text-[#1a7f37]">✓ Pull request created successfully.{" "}</span>
+                {prUrl && <a role="link" href={prUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{prUrl}</a>}
+              </p>
+              <p className="mt-2 text-sm text-[#555]">
+                The CLI has finished — you can safely close this tab.
+              </p>
+            </>
           )}
           {workflowStatus === "error" && (
             <p className="text-[#cf222e] mt-2 text-sm font-semibold">✗ Setup failed. See log above.</p>

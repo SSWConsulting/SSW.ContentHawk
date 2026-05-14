@@ -163,6 +163,36 @@ describe("GitHub Secrets tab", () => {
     });
   });
 
+  it("shows a safe-to-close message after the workflow completes", async () => {
+    // ARRANGE
+    vi.mocked(service.getExistingSecrets).mockResolvedValue([...SECRETS]);
+    vi.mocked(service.getBranchStatus).mockResolvedValue(false);
+
+    const mockEs = new EventTarget() as EventTarget & { close: () => void };
+    mockEs.close = vi.fn();
+    vi.mocked(service.createWorkflowStream).mockReturnValue(mockEs as unknown as EventSource);
+
+    await renderAndOpenSecrets();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument()
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Next: Set up Workflows/ }));
+
+    // ACT
+    await userEvent.click(screen.getByRole("button", { name: "Set up Workflows" }));
+
+    // ASSERT — message is not shown while the workflow is still running
+    expect(screen.queryByText(/you can safely close this tab/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      mockEs.dispatchEvent(new Event("done"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/The CLI has finished — you can safely close this tab\./)).toBeInTheDocument();
+    });
+  });
+
   it("enables Submit when a pre-existing field is unlocked and a new value is entered, and sends only the overridden value", async () => {
     // ARRANGE
     vi.mocked(service.getExistingSecrets).mockResolvedValue([...SECRETS]);
