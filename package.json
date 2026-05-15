@@ -15,6 +15,7 @@
   "scripts": {
     "build": "vite build",
     "test": "vitest",
+    "dev:run": "npx tsx scripts/run-workflow.ts",
     "dev": "npx tsx scripts/install.ts",
     "start": "node dist/install.js",
     "run-workflow": "npx tsx scripts/run-workflow.ts"
