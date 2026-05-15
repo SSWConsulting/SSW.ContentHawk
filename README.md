@@ -136,7 +136,7 @@ Run this after the judge has created issues and you have merged the judge PR. Yo
 
 ### Install Script
 
-The installer is published to npm as `ssw.contenthawk` and run via `npx ssw.contenthawk@latest <owner/repo>`. The Claude/AI **skill** (`ssw.contenthawk/skills/contenthawk-install`) is a thin wrapper that instructs the agent to invoke that `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out. The installer itself is no longer bundled inside the skill.
+The installer is published to npm as `ssw-contenthawk` and run via `npx ssw-contenthawk@latest <owner/repo>`. The Claude/AI **skill** (`ssw-contenthawk/skills/contenthawk-install`) is a thin wrapper that instructs the agent to invoke that `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out. The installer itself is no longer bundled inside the skill.
 
 To cut a new release:
 
@@ -144,8 +144,8 @@ To cut a new release:
 2. Authenticate with npm if you haven't already by running `npm login`. Use SSW's NPM account in Keeper.
 3. Get your code changes reviewed and merged to `main`.
 4. Run `npm run build` to produce the bundled `dist/install.js` (and `dist/form.css`).
-5. Run `npm publish` to push to npm. From then on `npx ssw.contenthawk@latest <owner/repo>` resolves to the new version.
+5. Run `npm publish` to push to npm. From then on `npx ssw-contenthawk@latest <owner/repo>` resolves to the new version.
 
 ### Skill
 
-The skills in `ssw.contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw.contenthawk`.
+The skills in `ssw-contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw-contenthawk`.
