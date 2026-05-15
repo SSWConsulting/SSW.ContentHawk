@@ -284,7 +284,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
           {workflowStatus === "no-changes" && (
             <div className="mt-4">
               <Message variant="info">
-                No changes to commit — is ContentHawk workflows already match what's on your default branch.
+                No changes to commit — ContentHawk workflows already match what's on your default branch.
               </Message>
             </div>
           )}
