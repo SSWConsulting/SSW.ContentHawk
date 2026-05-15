@@ -11,7 +11,8 @@ ContentHawk is a GitHub Actions pipeline for auditing repository content. Instal
 
 1. **Determine the target repo.** If the user hasn't already provided one, ask them for it in `owner/repo` form before continuing.
 2. **Verify `gh` is authenticated.** Run `gh auth status`. If it fails, tell the user to run `gh auth login` and stop.
-3. **Verify the correct agentic workflows CLI is installed** run `gh aw --version`. Ensure the version matches the one specified in `github/gh-aw-actions` `https://raw.githubusercontent.com/SSWConsulting/SSW.ContentHawk/refs/heads/main/.github/aw/actions-lock.json`. If the CLI fails tell the user to install the correct version from listed from the `actions-lock.json` and stop.
+3. **Verify the user has their username set** in their GitHub CLI config. Run `git config --global user.name`. and `git config --global user.email`. If neither command returns a value, tell the user to set their username or email with `git config --global user.name "Your Name"` or `git config --global user.email "your.email@example.com"` and stop.
+4. **Verify the correct agentic workflows CLI is installed** run `gh aw --version`. Ensure the version matches the one specified in `github/gh-aw-actions` `https://raw.githubusercontent.com/SSWConsulting/SSW.ContentHawk/refs/heads/main/.github/aw/actions-lock.json`. If the CLI fails tell the user to install the correct version from listed from the `actions-lock.json` and stop.
 4. **Run the installer.** Run `npx ssw-contenthawk@latest <owner/repo>`.
 
 The installer starts a local form server on `127.0.0.1`, prints a `http://127.0.0.1:<port>/?token=...` URL on stderr, and opens it in the user's browser. When the process exits tell the thank the user for running the installer and tell them to re-run the skill if any issues occurred.
