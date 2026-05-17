@@ -2,9 +2,16 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { RunWorkflowForm } from "./run-workflow-form-component.tsx";
 
-export function renderForm(targetRepo: string, token: string, css: string): string {
-  const inner = renderToString(<RunWorkflowForm targetRepo={targetRepo} token={token} />);
-  const props = JSON.stringify({ targetRepo, token });
+export function renderForm(
+  targetRepo: string,
+  token: string,
+  css: string,
+  initialFields?: Record<string, string>,
+): string {
+  const inner = renderToString(
+    <RunWorkflowForm targetRepo={targetRepo} token={token} initialFields={initialFields} />,
+  );
+  const props = JSON.stringify({ targetRepo, token, initialFields });
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
   return `<!doctype html>
 <html>

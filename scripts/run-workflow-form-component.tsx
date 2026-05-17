@@ -4,19 +4,90 @@ import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
 
+const FIELDS = [
+  {
+    name: "intent",
+    label: "Intent",
+    description: "What Agent 2 should look for and act on.",
+    placeholder: "e.g. archive all outdated blog posts on the topic of AI",
+    multiline: true,
+  },
+  {
+    name: "search_scope",
+    label: "Search Scope",
+    description: "Which content files to scan and how to filter them.",
+    placeholder: "e.g. all blog files",
+    multiline: false,
+  },
+  {
+    name: "label_name",
+    label: "Label Name",
+    description: "GitHub label slug to tie the pipeline together. Agent 2 applies it to issues, Agent 3 queries by it.",
+    placeholder: "e.g. archive-outdated-blog-posts",
+    multiline: false,
+  },
+  {
+    name: "processing_priority",
+    label: "Processing Priority",
+    description: "How to sort the file list for processing order.",
+    placeholder: "e.g. first sort by created date ascending, then by lastUpdated descending",
+    multiline: true,
+  },
+  {
+    name: "issue_preferences",
+    label: "Issue Preferences",
+    description: "Preferences for how Agent 2 creates issues.",
+    placeholder: "e.g. use template .github/ISSUE_TEMPLATE/content-review.md, max 20 issues per run",
+    multiline: true,
+  },
+  {
+    name: "pr_preferences",
+    label: "PR Preferences",
+    description: "Preferences for how Agent 3 creates PRs.",
+    placeholder: "e.g. bundle up to 5 related issues per PR",
+    multiline: true,
+  },
+] as const;
+
+type FieldName = (typeof FIELDS)[number]["name"];
+
 export interface RunWorkflowFormProps {
   targetRepo: string;
   token: string;
+  initialFields?: Partial<Record<FieldName, string>>;
 }
 
-export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
+export function RunWorkflowForm({ targetRepo, token, initialFields = {} }: RunWorkflowFormProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<LogEvent[]>([]);
+  const [values, setValues] = useState<Record<FieldName, string>>(
+    Object.fromEntries(FIELDS.map((f) => [f.name, initialFields[f.name] ?? ""])) as Record<FieldName, string>,
+  );
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
 
-  function startRun() {
+  function handleChange(name: FieldName, value: string) {
+    setValues((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+
+  function startRun(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const newErrors: Partial<Record<FieldName, string>> = {};
+    for (const field of FIELDS) {
+      if (!values[field.name].trim()) newErrors[field.name] = "Required";
+    }
+    if (Object.keys(newErrors).length) {
+      setFieldErrors(newErrors);
+      return;
+    }
+
     setStatus("running");
     setLog([]);
-    const es = new EventSource(`/run-workflow-stream?token=${encodeURIComponent(token)}`);
+
+    const params = new URLSearchParams({ token });
+    for (const field of FIELDS) params.set(field.name, values[field.name]);
+
+    const es = new EventSource(`/run-workflow-stream?${params}`);
     es.addEventListener("message", (e) => {
       const event = JSON.parse((e as MessageEvent).data) as LogEvent;
       setLog((prev) => [...prev, event]);
@@ -43,6 +114,9 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
     };
   }
 
+  const inputClass =
+    "w-full py-[0.55rem] px-[0.65rem] font-mono border border-[#ccc] rounded box-border text-[0.95rem]";
+
   return (
     <div className="font-sans max-w-[540px] mx-auto mt-16 px-4 text-[#1a1a1a]">
       <h1 className="text-xl mb-0">Run ContentHawk Workflow</h1>
@@ -52,17 +126,48 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
         repository.
       </p>
 
-      {status === "idle" && (
-        <Button type="button" onClick={startRun}>
-          Run Workflow
-        </Button>
+      {(status === "idle" || status === "error") && (
+        <form onSubmit={startRun} noValidate>
+          {FIELDS.map((field) => (
+            <label key={field.name} className="block my-5">
+              <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
+                {field.label}
+              </span>
+              <span className="block text-xs text-[#555] mb-1.5">{field.description}</span>
+              {field.multiline ? (
+                <textarea
+                  name={field.name}
+                  rows={3}
+                  placeholder={field.placeholder}
+                  value={values[field.name]}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  className={`${inputClass} resize-y`}
+                />
+              ) : (
+                <input
+                  type="text"
+                  name={field.name}
+                  placeholder={field.placeholder}
+                  value={values[field.name]}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  className={inputClass}
+                />
+              )}
+              {fieldErrors[field.name] && (
+                <span className="block text-xs text-[#cf222e] mt-1">{fieldErrors[field.name]}</span>
+              )}
+            </label>
+          ))}
+          <Button type="submit">Run Workflow</Button>
+        </form>
       )}
+
       {status === "running" && <Button disabled>Running\u2026</Button>}
       {status === "done" && (
         <p className="text-[#1a7f37] font-semibold text-sm">\u2713 Workflow completed successfully.</p>
       )}
       {status === "error" && (
-        <p className="text-[#cf222e] font-semibold text-sm">\u2717 Workflow failed. See log above.</p>
+        <p className="text-[#cf222e] font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
       )}
 
       {log.length > 0 && (

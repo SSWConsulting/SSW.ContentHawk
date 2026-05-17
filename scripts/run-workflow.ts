@@ -74,15 +74,21 @@ function openBrowser(url: string): void {
   }
 }
 
-function triggerWorkflow(targetRepo: string, onLine: (l: string) => void): Promise<void> {
+function triggerWorkflow(
+  targetRepo: string,
+  fields: Record<string, string>,
+  onLine: (l: string) => void,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     onLine(`Triggering ${CONTENTHAWK_WORKFLOW_FILE}\u2026`);
+    const fieldArgs = Object.entries(fields).flatMap(([k, v]) => ["--field", `${k}=${v}`]);
     const child = spawn("gh", [
       "workflow",
       "run",
       CONTENTHAWK_WORKFLOW_FILE,
       "--repo",
       targetRepo,
+      ...fieldArgs,
     ]);
     child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
     child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
@@ -157,16 +163,48 @@ function watchRun(
   });
 }
 
-async function main() {
-  const targetRepo = process.argv[2];
+const REQUIRED_FIELDS = [
+  "intent",
+  "search_scope",
+  "label_name",
+  "processing_priority",
+  "issue_preferences",
+  "pr_preferences",
+] as const;
+
+type FieldName = (typeof REQUIRED_FIELDS)[number];
+
+function parseArgs(argv: string[]): { targetRepo: string; cliFields: Partial<Record<FieldName, string>> } {
+  const targetRepo = argv[0];
   if (
     !targetRepo ||
     !targetRepo.includes("/") ||
     targetRepo.startsWith("/") ||
     targetRepo.endsWith("/")
   ) {
-    die("Usage: run-workflow.ts <owner/repo>");
+    die("Usage: run-workflow.ts <owner/repo> [--intent \"...\" --search_scope \"...\" ...]");
   }
+
+  const cliFields: Partial<Record<FieldName, string>> = {};
+  const rest = argv.slice(1);
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    const eqMatch = arg.match(/^--([a-z_]+)=(.+)$/s);
+    if (eqMatch) {
+      cliFields[eqMatch[1] as FieldName] = eqMatch[2];
+      continue;
+    }
+    const flagMatch = arg.match(/^--([a-z_]+)$/);
+    if (flagMatch && i + 1 < rest.length) {
+      cliFields[flagMatch[1] as FieldName] = rest[++i];
+    }
+  }
+
+  return { targetRepo, cliFields };
+}
+
+async function main() {
+  const { targetRepo, cliFields } = parseArgs(process.argv.slice(2));
 
   checkGh();
 
@@ -178,7 +216,7 @@ async function main() {
 
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      return res.end(renderForm(targetRepo, token, css));
+      return res.end(renderForm(targetRepo, token, css, cliFields as Record<string, string>));
     }
 
     if (req.method === "POST" && url.pathname === "/kill") {
@@ -208,9 +246,23 @@ async function main() {
           ? send({ type: "link", message: line, url: line })
           : log(line);
 
+      const requestFields: Record<string, string> = { ...cliFields };
+      for (const key of REQUIRED_FIELDS) {
+        const val = url.searchParams.get(key);
+        if (val) requestFields[key] = val;
+      }
+      const missingFields = REQUIRED_FIELDS.filter((f) => !requestFields[f]);
+      if (missingFields.length) {
+        res.write(
+          `event: failed\ndata: ${JSON.stringify(`Missing required fields: ${missingFields.join(", ")}`)}\n\n`,
+        );
+        res.end();
+        return;
+      }
+
       try {
         const beforeMs = Date.now();
-        await triggerWorkflow(targetRepo, sendLine);
+        await triggerWorkflow(targetRepo, requestFields as Record<FieldName, string>, sendLine);
         const runId = await waitForRunId(targetRepo, beforeMs, log);
         await watchRun(runId, targetRepo, sendLine);
         res.write("event: done\ndata: {}\n\n");
