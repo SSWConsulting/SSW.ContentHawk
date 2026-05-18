@@ -109,22 +109,17 @@ export interface RunWorkflowFormProps {
   campaignStatuses?: CampaignStatus[];
 }
 
-export function RunWorkflowForm({ targetRepo, token, campaignStatuses: initialStatuses = [] }: RunWorkflowFormProps) {
+export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>(initialStatuses);
+  const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
 
   useEffect(() => {
-    if (initialStatuses.length === 0) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/campaign-statuses?token=${encodeURIComponent(token)}`);
-        if (res.ok) setCampaignStatuses(await res.json() as CampaignStatus[]);
-      } catch {
-        // best-effort
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [token, initialStatuses.length]);
+
+
+    fetch(`/campaign-statuses?token=${encodeURIComponent(token)}`).then((res) => {
+      if (res.ok) res.json().then((data) => setCampaignStatuses(data as CampaignStatus[]));
+    });
+  }, [token]);
   const [log, setLog] = useState<LogEvent[]>([]);
   const [values, setValues] = useState<Record<FieldName, string>>(
     Object.fromEntries(FIELDS.map((f) => [f.name, ""])) as Record<FieldName, string>,

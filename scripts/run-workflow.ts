@@ -234,8 +234,7 @@ async function main() {
 
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      const initialStatuses = contentCatalog ? computeCampaignStatuses(contentCatalog) : [];
-      return res.end(renderForm(targetRepo, token, css, initialStatuses));
+      return res.end(renderForm(targetRepo, token, css));
     }
 
     if (req.method === "GET" && url.pathname === "/campaign-statuses") {
