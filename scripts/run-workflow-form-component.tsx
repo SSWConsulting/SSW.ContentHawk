@@ -54,14 +54,13 @@ type FieldName = (typeof FIELDS)[number]["name"];
 export interface RunWorkflowFormProps {
   targetRepo: string;
   token: string;
-  initialFields?: Partial<Record<FieldName, string>>;
 }
 
-export function RunWorkflowForm({ targetRepo, token, initialFields = {} }: RunWorkflowFormProps) {
+export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<LogEvent[]>([]);
   const [values, setValues] = useState<Record<FieldName, string>>(
-    Object.fromEntries(FIELDS.map((f) => [f.name, initialFields[f.name] ?? ""])) as Record<FieldName, string>,
+    Object.fromEntries(FIELDS.map((f) => [f.name, ""])) as Record<FieldName, string>,
   );
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldName, string>>>({});
 

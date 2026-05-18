@@ -6,12 +6,11 @@ export function renderForm(
   targetRepo: string,
   token: string,
   css: string,
-  initialFields?: Record<string, string>,
 ): string {
   const inner = renderToString(
-    <RunWorkflowForm targetRepo={targetRepo} token={token} initialFields={initialFields} />,
+    <RunWorkflowForm targetRepo={targetRepo} token={token} />,
   );
-  const props = JSON.stringify({ targetRepo, token, initialFields });
+  const props = JSON.stringify({ targetRepo, token });
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
   return `<!doctype html>
 <html>
