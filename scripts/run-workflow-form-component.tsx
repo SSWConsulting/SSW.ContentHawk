@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./components/buttons";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
+import { fetchCampaignStatuses } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
@@ -65,9 +66,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   useEffect(() => {
 
 
-    fetch(`/campaign-statuses?token=${encodeURIComponent(token)}`).then((res) => {
-      if (res.ok) res.json().then((data) => setCampaignStatuses(data as CampaignStatus[]));
-    });
+    fetchCampaignStatuses(token).then(setCampaignStatuses);
   }, [token]);
   const [log, setLog] = useState<LogEvent[]>([]);
   const [values, setValues] = useState<Record<FieldName, string>>(
