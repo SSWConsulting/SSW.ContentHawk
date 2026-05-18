@@ -30,21 +30,32 @@ type ContentCatalog = Record<string, ContentItem[]>;
 
 Ask the user: **Which GitHub repository should the workflow run on?** (format: `owner/repo`)
 
-### Step 2 — Discover snapshot files
+
+### Step 2 - Initialise ContentCatalog
+
+Initialize an empty `ContentCatalog` object:
+
+```typescript
+const contentCatalog: ContentCatalog = {};
+
+```
+
+### Step 3 — Discover snapshot files
 
 Glob all files matching `.github/ContentHawk/TODO/*.md`.
 
 Read each file.
 
-### Step 3 — Parse each snapshot file
+### Step 4 — Parse each snapshot file
 
 For each file:
 
-#### 3a. Extract the Label
+
+#### 4a. Extract the Label
 
 Find the `## Agent Configuration` section and locate the row where the first column is `Label`. Extract the value (strip surrounding backticks if present). This is the **catalog key** for this file.
 
-#### 3b. Parse the Files to Review table
+#### 4b. Parse the Files to Review table
 
 Find the `## Files to Review` section. Parse every data row (skip the header and separator rows). For each row, map the columns to a `ContentItem`:
 
@@ -63,13 +74,8 @@ Find the `## Files to Review` section. Parse every data row (skip the header and
 - `Issue #<N>` (e.g. `Issue #101`) → the integer `N` (e.g. `101`)
 - Any other value → `"pending"`
 
-### Step 4 — Build the ContentCatalog
-
-Construct a JSON object where:
-- Each key is the Label extracted in Step 3a
-- Each value is the array of `ContentItem` objects from Step 3b
-
-If multiple snapshot files share the same Label, merge their item arrays under that key.
+### 4c. Populate the ContentCatalog
+Use the extracted Label as the key in `ContentCatalog`, and append array of parsed `ContentItem`s as the value. 
 
 ### Step 5 — Serialize and run
 

@@ -176,6 +176,19 @@ interface ContentItem {
 
 type ContentCatalog = Record<string, ContentItem[]>;
 
+interface CampaignStatus {
+  name: string;
+  percent: number;
+}
+
+function computeCampaignStatuses(catalog: ContentCatalog): CampaignStatus[] {
+  return Object.entries(catalog).map(([name, items]) => {
+    const done = items.filter((i) => i.checkResult !== "pending").length;
+    const total = items.length;
+    return { name, percent: total === 0 ? 0 : Math.round((done / total) * 100) };
+  });
+}
+
 function parseArgs(argv: string[]): { targetRepo: string; contentCatalog: ContentCatalog | null } {
   const targetRepo = argv[0];
   if (
@@ -221,7 +234,14 @@ async function main() {
 
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      return res.end(renderForm(targetRepo, token, css));
+      const initialStatuses = contentCatalog ? computeCampaignStatuses(contentCatalog) : [];
+      return res.end(renderForm(targetRepo, token, css, initialStatuses));
+    }
+
+    if (req.method === "GET" && url.pathname === "/campaign-statuses") {
+      const statuses = contentCatalog ? computeCampaignStatuses(contentCatalog) : [];
+      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      return res.end(JSON.stringify(statuses));
     }
 
     if (req.method === "POST" && url.pathname === "/kill") {

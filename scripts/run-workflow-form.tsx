@@ -1,16 +1,17 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { RunWorkflowForm } from "./run-workflow-form-component.tsx";
+import { RunWorkflowForm, type CampaignStatus } from "./run-workflow-form-component.tsx";
 
 export function renderForm(
   targetRepo: string,
   token: string,
   css: string,
+  campaignStatuses: CampaignStatus[],
 ): string {
   const inner = renderToString(
-    <RunWorkflowForm targetRepo={targetRepo} token={token} />,
+    <RunWorkflowForm targetRepo={targetRepo} token={token} campaignStatuses={campaignStatuses} />,
   );
-  const props = JSON.stringify({ targetRepo, token });
+  const props = JSON.stringify({ targetRepo, token, campaignStatuses });
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
   return `<!doctype html>
 <html>
