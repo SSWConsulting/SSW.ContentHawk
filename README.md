@@ -6,6 +6,10 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ---
 
+## 🎥 Video overview
+
+[![ContentHawk overview video](https://img.youtube.com/vi/XkRd0JcMyxM/0.jpg)](https://youtu.be/XkRd0JcMyxM)
+
 ## Installing ContentHawk
 
 ### Option 1: Use the installer skill (recommended)
