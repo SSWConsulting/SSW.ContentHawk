@@ -60,6 +60,7 @@ export interface RunWorkflowFormProps {
 }
 
 export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
+  const [tab, setTab] = useState<"run" | "progress">("run");
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
 
@@ -126,80 +127,103 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   const inputClass =
     "w-full py-[0.55rem] px-[0.65rem] font-mono border border-[#ccc] rounded box-border text-[0.95rem]";
 
+  const tabClass = (t: "run" | "progress") =>
+    t === tab
+      ? "px-4 py-2 text-sm font-semibold border-b-2 border-[#0969da] text-[#0969da] -mb-px"
+      : "px-4 py-2 text-sm text-[#555] border-b-2 border-transparent -mb-px hover:text-[#1a1a1a]";
+
   return (
     <div className="font-sans max-w-[540px] mx-auto mt-16 px-4 text-[#1a1a1a]">
-      <CampaignStatusPanel statuses={campaignStatuses} />
-      <h1 className="text-xl mb-0">Run ContentHawk Workflow</h1>
-      <p className="text-[#555] font-mono mt-1">{targetRepo}</p>
-      <p className="text-sm text-[#555] mt-3 mb-6">
-        Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this
-        repository.
-      </p>
+      <div className="flex border-b border-[#ccc] mb-6">
+        <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
+          New Campaign
+        </button>
+        <button type="button" onClick={() => setTab("progress")} className={tabClass("progress")}>
+          Campaigns
+        </button>
+      </div>
 
-      {(status === "idle" || status === "error") && (
-        <form onSubmit={startRun} noValidate>
-          {FIELDS.map((field) => (
-            <label key={field.name} className="block my-5">
-              <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
-                {field.label}
-              </span>
-              <span className="block text-xs text-[#555] mb-1.5">{field.description}</span>
-              {field.multiline ? (
-                <textarea
-                  name={field.name}
-                  rows={3}
-                  placeholder={field.placeholder}
-                  value={values[field.name]}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  className={`${inputClass} resize-y`}
-                />
-              ) : (
-                <input
-                  type="text"
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  value={values[field.name]}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  className={inputClass}
-                />
-              )}
-              {fieldErrors[field.name] && (
-                <span className="block text-xs text-[#cf222e] mt-1">{fieldErrors[field.name]}</span>
-              )}
-            </label>
-          ))}
-          <Button type="submit">Run Workflow</Button>
-        </form>
-      )}
+      {tab === "run" && (
+        <>
+          <h1 className="text-xl mb-0">Run ContentHawk Workflow</h1>
+          <p className="text-[#555] font-mono mt-1">{targetRepo}</p>
+          <p className="text-sm text-[#555] mt-3 mb-6">
+            Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this
+            repository.
+          </p>
 
-      {status === "running" && <Button disabled>Running\u2026</Button>}
-      {status === "done" && (
-        <p className="text-[#1a7f37] font-semibold text-sm">\u2713 Workflow completed successfully.</p>
-      )}
-      {status === "error" && (
-        <p className="text-[#cf222e] font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
-      )}
-
-      {log.length > 0 && (
-        <div className="mt-4 text-xs bg-gray-50 border border-gray-200 rounded p-3 max-h-64 overflow-y-auto font-mono">
-          {log.map((entry, i) =>
-            entry.type === "link" ? (
-              <a
-                key={i}
-                href={entry.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-600 underline whitespace-pre-wrap"
-              >
-                {entry.message}
-              </a>
-            ) : (
-              <span key={i} className="block whitespace-pre-wrap">
-                {entry.message}
-              </span>
-            ),
+          {(status === "idle" || status === "error") && (
+            <form onSubmit={startRun} noValidate>
+              {FIELDS.map((field) => (
+                <label key={field.name} className="block my-5">
+                  <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
+                    {field.label}
+                  </span>
+                  <span className="block text-xs text-[#555] mb-1.5">{field.description}</span>
+                  {field.multiline ? (
+                    <textarea
+                      name={field.name}
+                      rows={3}
+                      placeholder={field.placeholder}
+                      value={values[field.name]}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      className={`${inputClass} resize-y`}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      name={field.name}
+                      placeholder={field.placeholder}
+                      value={values[field.name]}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      className={inputClass}
+                    />
+                  )}
+                  {fieldErrors[field.name] && (
+                    <span className="block text-xs text-[#cf222e] mt-1">{fieldErrors[field.name]}</span>
+                  )}
+                </label>
+              ))}
+              <Button type="submit">Run Workflow</Button>
+            </form>
           )}
-        </div>
+
+          {status === "running" && <Button disabled>Running\u2026</Button>}
+          {status === "done" && (
+            <p className="text-[#1a7f37] font-semibold text-sm">\u2713 Workflow completed successfully.</p>
+          )}
+          {status === "error" && (
+            <p className="text-[#cf222e] font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
+          )}
+
+          {log.length > 0 && (
+            <div className="mt-4 text-xs bg-gray-50 border border-gray-200 rounded p-3 max-h-64 overflow-y-auto font-mono">
+              {log.map((entry, i) =>
+                entry.type === "link" ? (
+                  <a
+                    key={i}
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-blue-600 underline whitespace-pre-wrap"
+                  >
+                    {entry.message}
+                  </a>
+                ) : (
+                  <span key={i} className="block whitespace-pre-wrap">
+                    {entry.message}
+                  </span>
+                ),
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "progress" && (
+        campaignStatuses.length > 0
+          ? <CampaignStatusPanel statuses={campaignStatuses} />
+          : <p className="text-sm text-[#555]">No campaign data available.</p>
       )}
     </div>
   );

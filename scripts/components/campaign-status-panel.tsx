@@ -36,7 +36,7 @@ export function CampaignStatusPanel({ statuses }: { statuses: CampaignStatus[] }
   return (
     <div className="mb-6 border border-gray-200 rounded p-4 bg-gray-50">
       <h2 className="text-xs font-semibold font-mono text-[#555] uppercase tracking-wide mb-3">
-        Campaign Progress
+        Campaigns
       </h2>
       <ul className="flex flex-col gap-3">
         {statuses.map((s) => (
