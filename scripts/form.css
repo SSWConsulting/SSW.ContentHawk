@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@source "./form-component.tsx";
+@source "./**/*.tsx";
 
 @layer components {
 .status { display: block; margin-top: .35rem; font-size: .85rem; }

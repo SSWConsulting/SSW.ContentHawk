@@ -21,7 +21,9 @@
     "run-workflow": "npx tsx scripts/run-workflow.ts"
   },
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "@tailwindcss/postcss": "^4.2.4",
+    "@tanstack/react-table": "^8.21.3",
     "esbuild": "^0.28.0",
     "lucide-react": "^1.14.0",
     "postcss": "^8.5.13",

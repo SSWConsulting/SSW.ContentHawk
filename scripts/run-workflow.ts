@@ -20,6 +20,7 @@ import tailwindcss from "@tailwindcss/postcss";
 import fs from "node:fs/promises";
 import { renderForm } from "./run-workflow-form.tsx";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants.ts";
+import type { ContentCatalog } from "./types.ts";
 
 async function bundleClient(): Promise<string> {
   const entry = path.join(
@@ -163,18 +164,6 @@ function watchRun(
   });
 }
 
-type CheckResult = "skipped" | "pending" | number;
-
-interface ContentItem {
-  path: string;
-  checkResult: CheckResult;
-  checkedDate: string;
-  lastUpdated: string;
-  categoryList: string;
-  createdDate: string;
-}
-
-type ContentCatalog = Record<string, ContentItem[]>;
 
 interface CampaignStatus {
   name: string;
@@ -241,6 +230,11 @@ async function main() {
       const statuses = contentCatalog ? computeCampaignStatuses(contentCatalog) : [];
       res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
       return res.end(JSON.stringify(statuses));
+    }
+
+    if (req.method === "GET" && url.pathname === "/campaign-items") {
+      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      return res.end(JSON.stringify(contentCatalog ?? {}));
     }
 
     if (req.method === "POST" && url.pathname === "/kill") {

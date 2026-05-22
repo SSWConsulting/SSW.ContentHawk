@@ -31,22 +31,50 @@ function CircleProgress({ percent }: { percent: number }) {
   );
 }
 
-export function CampaignStatusPanel({ statuses }: { statuses: CampaignStatus[] }) {
+interface CampaignStatusPanelProps {
+  statuses: CampaignStatus[];
+  selectedCampaign?: string | null;
+  onSelectCampaign?: (name: string) => void;
+}
+
+export function CampaignStatusPanel({
+  statuses,
+  selectedCampaign,
+  onSelectCampaign,
+}: CampaignStatusPanelProps) {
   if (statuses.length === 0) return null;
+  const selectable = Boolean(onSelectCampaign);
   return (
     <div className="mb-6 border border-gray-200 rounded p-4 bg-gray-50">
       <h2 className="text-xs font-semibold font-mono text-[#555] uppercase tracking-wide mb-3">
         Campaigns
       </h2>
-      <ul className="flex flex-col gap-3">
-        {statuses.map((s) => (
-          <li key={s.name} className="flex items-center gap-3">
-            <CircleProgress percent={s.percent} />
-            <span className="font-mono text-sm text-[#1a1a1a] truncate" title={s.name}>
-              {s.name}
-            </span>
-          </li>
-        ))}
+      <ul className="flex flex-col gap-2">
+        {statuses.map((s) => {
+          const isSelected = selectedCampaign === s.name;
+          return (
+            <li
+              key={s.name}
+              onClick={() => onSelectCampaign?.(s.name)}
+              className={[
+                "flex items-center gap-3 px-2 py-1 rounded transition-colors",
+                selectable ? "cursor-pointer" : "",
+                isSelected
+                  ? "bg-white border border-[#0969da]"
+                  : selectable
+                    ? "hover:bg-white hover:border hover:border-gray-200 border border-transparent"
+                    : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <CircleProgress percent={s.percent} />
+              <span className="font-mono text-sm text-[#1a1a1a] truncate" title={s.name}>
+                {s.name}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

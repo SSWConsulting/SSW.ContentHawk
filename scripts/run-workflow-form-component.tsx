@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./components/buttons";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
+import { CampaignItemsTable } from "./components/campaign-items-table";
+import { OctokitProvider } from "./contexts/octokit-context";
 import { fetchCampaignStatuses } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 
@@ -63,6 +65,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   const [tab, setTab] = useState<"run" | "progress">("run");
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -221,9 +224,22 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
       )}
 
       {tab === "progress" && (
-        campaignStatuses.length > 0
-          ? <CampaignStatusPanel statuses={campaignStatuses} />
-          : <p className="text-sm text-[#555]">No campaign data available.</p>
+        <OctokitProvider>
+          {campaignStatuses.length > 0
+            ? (
+              <CampaignStatusPanel
+                statuses={campaignStatuses}
+                selectedCampaign={selectedCampaign}
+                onSelectCampaign={setSelectedCampaign}
+              />
+            )
+            : <p className="text-sm text-[#555]">No campaign data available.</p>}
+          <CampaignItemsTable
+            targetRepo={targetRepo}
+            token={token}
+            selectedCampaign={selectedCampaign}
+          />
+        </OctokitProvider>
       )}
     </div>
   );
