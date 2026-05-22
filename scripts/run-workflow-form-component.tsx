@@ -141,7 +141,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
   return (
     <TooltipProvider>
-    <div className="font-sans max-w-[540px] mx-auto mt-16 px-4 text-[#1a1a1a]">
+    <div className="font-sans max-w-[540px] mx-auto my-16 px-4 text-[#1a1a1a]">
       <div className="flex border-b border-[#ccc] mb-6">
         <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
           New Campaign
