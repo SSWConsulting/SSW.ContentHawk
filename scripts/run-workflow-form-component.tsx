@@ -242,20 +242,8 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
           {selectedCampaign && (
             <CampaignActions
               openIssueCount={openIssueCounts[selectedCampaign] ?? 0}
-              onGenerateIssues={async () => {
-                const res = await fetch(`/run-judge?token=${encodeURIComponent(token)}`);
-                if (!res.ok) {
-                  const body = await res.json().catch(() => ({})) as { error?: string };
-                  throw new Error(body.error ?? `Request failed: ${res.status}`);
-                }
-              }}
-              onFixIssues={async () => {
-                const res = await fetch(`/run-fixer?token=${encodeURIComponent(token)}`);
-                if (!res.ok) {
-                  const body = await res.json().catch(() => ({})) as { error?: string };
-                  throw new Error(body.error ?? `Request failed: ${res.status}`);
-                }
-              }}
+              judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
+              fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
               issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
               pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
             />

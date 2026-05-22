@@ -169,17 +169,18 @@ async function waitForRunId(
   targetRepo: string,
   beforeMs: number,
   onLine: (l: string) => void,
+  workflowFile: string = CONTENTHAWK_WORKFLOW_FILE,
 ): Promise<string> {
   onLine("Waiting for run to appear\u2026");
-  for (let i = 0; i < 10; i++) {
-    await new Promise<void>((r) => setTimeout(r, 2000));
+  for (let i = 0; i < 20; i++) {
+    await new Promise<void>((r) => setTimeout(r, 3000));
     const result = spawnSync(
       "gh",
       [
         "run",
         "list",
         "--workflow",
-        CONTENTHAWK_WORKFLOW_FILE,
+        workflowFile,
         "--repo",
         targetRepo,
         "--limit",
@@ -390,18 +391,36 @@ async function main() {
       }
       const workflowFile =
         url.pathname === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
-      const noop = () => {};
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      });
+      res.flushHeaders();
+
+      type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
+      const send = (event: LogEvent) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+      const log = (message: string) => send({ type: "log", message });
+      const sendLine = (line: string) =>
+        /^https?:\/\//.test(line)
+          ? send({ type: "link", message: line, url: line })
+          : log(line);
+
       try {
         const beforeMs = Date.now();
-        await triggerWorkflow(targetRepo, {}, noop, workflowFile);
-        const runId = await waitForRunId(targetRepo, beforeMs, noop);
-        await watchRun(runId, targetRepo, noop);
-        res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-        return res.end(JSON.stringify({ ok: true }));
+        await triggerWorkflow(targetRepo, {}, sendLine, workflowFile);
+        const runId = await waitForRunId(targetRepo, beforeMs, log, workflowFile);
+        await watchRun(runId, targetRepo, sendLine);
+        res.write("event: done\ndata: {}\n\n");
       } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        return res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+        res.write(
+          `event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`,
+        );
+      } finally {
+        res.end();
       }
+      return;
     }
 
     if (req.method === "GET" && url.pathname === "/github/issues") {

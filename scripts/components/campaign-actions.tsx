@@ -1,37 +1,60 @@
 import React, { useState } from "react";
 import { Button } from "./buttons";
 
+type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
+
 interface CampaignActionsProps {
   openIssueCount: number;
-  onGenerateIssues: () => Promise<void>;
-  onFixIssues: () => Promise<void>;
+  judgeStreamUrl: string;
+  fixerStreamUrl: string;
   issuesUrl: string;
   pullsUrl: string;
 }
 
 export function CampaignActions({
   openIssueCount,
-  onGenerateIssues,
-  onFixIssues,
+  judgeStreamUrl,
+  fixerStreamUrl,
   issuesUrl,
   pullsUrl,
 }: CampaignActionsProps) {
   const [running, setRunning] = useState<null | "judge" | "fixer">(null);
   const [result, setResult] = useState<null | "judge" | "fixer">(null);
+  const [log, setLog] = useState<LogEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(type: "judge" | "fixer", action: () => Promise<void>) {
+  function runStream(type: "judge" | "fixer", url: string) {
     setRunning(type);
     setResult(null);
+    setLog([]);
     setError(null);
-    try {
-      await action();
-      setResult(type);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
+
+    const es = new EventSource(url);
+
+    es.addEventListener("message", (e) => {
+      const event = JSON.parse((e as MessageEvent).data) as LogEvent;
+      setLog((prev) => [...prev, event]);
+    });
+    es.addEventListener("done", () => {
+      es.close();
       setRunning(null);
-    }
+      setResult(type);
+    });
+    es.addEventListener("failed", (e: Event) => {
+      es.close();
+      setRunning(null);
+      const msg = (e as MessageEvent).data
+        ? (JSON.parse((e as MessageEvent).data) as string)
+        : "Unknown error";
+      setError(msg);
+    });
+    es.onerror = () => {
+      if (es.readyState !== EventSource.CLOSED) {
+        es.close();
+        setRunning(null);
+        setError("Connection lost");
+      }
+    };
   }
 
   return (
@@ -46,19 +69,32 @@ export function CampaignActions({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => run("judge", onGenerateIssues)}
+          onClick={() => runStream("judge", judgeStreamUrl)}
           disabled={running !== null}
         >
           {running === "judge" ? "Running\u2026" : "Generate Issues"}
         </Button>
         <Button
           type="button"
-          onClick={() => run("fixer", onFixIssues)}
+          onClick={() => runStream("fixer", fixerStreamUrl)}
           disabled={running !== null || openIssueCount === 0}
         >
           {running === "fixer" ? "Running\u2026" : "Fix Issues"}
         </Button>
       </div>
+
+      {log.length > 0 && (
+        <div className="mt-3 text-xs bg-white border border-gray-200 rounded p-3 max-h-48 overflow-y-auto font-mono">
+          {log.map((entry, i) =>
+            
+              <span key={i} className="block whitespace-pre-wrap text-[#555]">
+                {entry.message}
+              </span>
+            
+          )}
+        </div>
+      )}
+
       {result === "judge" && (
         <p className="mt-3 text-sm">
           <a href={issuesUrl} target="_blank" rel="noopener noreferrer" className="text-[#0969da] underline">
