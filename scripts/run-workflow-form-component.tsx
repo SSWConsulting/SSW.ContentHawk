@@ -3,6 +3,7 @@ import { Button } from "./components/buttons";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 import type { ResolvedCatalog } from "./types";
@@ -139,6 +140,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
       : "px-4 py-2 text-sm text-[#555] border-b-2 border-transparent -mb-px hover:text-[#1a1a1a]";
 
   return (
+    <TooltipProvider>
     <div className="font-sans max-w-[540px] mx-auto mt-16 px-4 text-[#1a1a1a]">
       <div className="flex border-b border-[#ccc] mb-6">
         <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
@@ -265,5 +267,6 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
         </>
       )}
     </div>
+    </TooltipProvider>
   );
 }

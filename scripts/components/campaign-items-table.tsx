@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { Check, CircleSlash, Clock, SkipForward } from "lucide-react";
 import type { ResolvedItem } from "../types.ts";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 // function ruleSlug(path: string): string {
 //   const parts = path.split("/");
@@ -81,12 +82,16 @@ export function CampaignItemsTable({
       columnHelper.accessor("path", {
         header: "Rule",
         cell: (info) => (
-          <span
-            className="font-mono text-xs text-[#1a1a1a] truncate block max-w-45"
-            title={info.getValue()}
-          >
-            {info.getValue()}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="font-mono text-xs text-[#1a1a1a] truncate block max-w-45 cursor-default">
+                {info.getValue()}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" className="font-mono text-nowrap max-w-max">
+              {info.getValue()}
+            </TooltipContent>
+          </Tooltip>
         ),
       }),
     ],
