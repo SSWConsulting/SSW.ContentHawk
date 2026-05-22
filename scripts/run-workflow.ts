@@ -19,8 +19,8 @@ import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import fs from "node:fs/promises";
 import { renderForm } from "./run-workflow-form.tsx";
-import { CONTENTHAWK_WORKFLOW_FILE } from "./constants.ts";
-import type { ContentCatalog } from "./types.ts";
+import { CONTENTHAWK_WORKFLOW_FILE, CONTENT_JUDGE_WORKFLOW_FILE, CONTENT_FIXER_WORKFLOW_FILE } from "./constants.ts";
+import type { ContentCatalog, ResolvedCatalog, ResolvedItem } from "./types.ts";
 
 async function bundleClient(): Promise<string> {
   const entry = path.join(
@@ -48,6 +48,70 @@ async function buildCSS(): Promise<string> {
 function die(msg: string, code = 1): never {
   console.error(`ERROR: ${msg}`);
   process.exit(code);
+}
+
+async function resolveCatalog(
+  catalog: ContentCatalog,
+  targetRepo: string,
+  githubToken: string,
+): Promise<{ resolved: ResolvedCatalog; openIssueCounts: Record<string, number> }> {
+  const [owner, repo] = targetRepo.split("/");
+
+  type IssueApiResult = { state: string; state_reason: string | null };
+  type Task = { campaign: string; index: number; issueNumber: number };
+
+  const tasks: Task[] = [];
+  for (const [campaign, items] of Object.entries(catalog)) {
+    for (let i = 0; i < items.length; i++) {
+      if (typeof items[i].checkResult === "number") {
+        tasks.push({ campaign, index: i, issueNumber: items[i].checkResult as number });
+      }
+    }
+  }
+
+  const fetchResult = async (issueNumber: number): Promise<IssueApiResult | null> => {
+    if (!githubToken) return null;
+    try {
+      const r = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+        { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+      );
+      return r.ok ? (r.json() as Promise<IssueApiResult>) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const stateResults = await Promise.all(tasks.map((t) => fetchResult(t.issueNumber)));
+  const stateMap = new Map<string, IssueApiResult | null>();
+  for (let i = 0; i < tasks.length; i++) {
+    stateMap.set(`${tasks[i].campaign}:${tasks[i].index}`, stateResults[i]);
+  }
+
+  const resolved: ResolvedCatalog = {};
+  const openIssueCounts: Record<string, number> = {};
+
+  for (const [campaign, items] of Object.entries(catalog)) {
+    let openCount = 0;
+    resolved[campaign] = items.map((item, index): ResolvedItem => {
+      const { path, lastUpdated, checkedDate, categoryList, createdDate } = item;
+      const base = { path, lastUpdated, checkedDate, categoryList, createdDate };
+      if (typeof item.checkResult === "number") {
+        const issueNumber = item.checkResult;
+        const state = stateMap.get(`${campaign}:${index}`);
+        if (!state || state.state === "open") {
+          openCount++;
+          return { __typename: "open_issue", ...base, issueNumber };
+        }
+        return { __typename: "closed_issue", ...base, issueNumber, stateReason: state.state_reason };
+      }
+      if (item.checkResult === "skipped") return { __typename: "skipped", ...base };
+      return { __typename: "pending", ...base };
+    });
+    openIssueCounts[campaign] = openCount;
+  }
+
+  return { resolved, openIssueCounts };
 }
 
 function checkGh(): void {
@@ -79,14 +143,15 @@ function triggerWorkflow(
   targetRepo: string,
   fields: Record<string, string>,
   onLine: (l: string) => void,
+  workflowFile: string = CONTENTHAWK_WORKFLOW_FILE,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    onLine(`Triggering ${CONTENTHAWK_WORKFLOW_FILE}\u2026`);
+    onLine(`Triggering ${workflowFile}\u2026`);
     const fieldArgs = Object.entries(fields).flatMap(([k, v]) => ["--field", `${k}=${v}`]);
     const child = spawn("gh", [
       "workflow",
       "run",
-      CONTENTHAWK_WORKFLOW_FILE,
+      workflowFile,
       "--repo",
       targetRepo,
       ...fieldArgs,
@@ -218,7 +283,13 @@ async function main() {
   const ghTokenResult = spawnSync("gh", ["auth", "token"], { encoding: "utf-8" });
   const githubToken = ghTokenResult.status === 0 ? ghTokenResult.stdout.trim() : "";
 
-  const [clientBundle, css] = await Promise.all([bundleClient(), buildCSS()]);
+  const [{ resolved: resolvedCatalog, openIssueCounts }, clientBundle, css] = await Promise.all([
+    contentCatalog
+      ? resolveCatalog(contentCatalog, targetRepo, githubToken)
+      : Promise.resolve({ resolved: {} as import("./types.ts").ResolvedCatalog, openIssueCounts: {} as Record<string, number> }),
+    bundleClient(),
+    buildCSS(),
+  ]);
   const token = crypto.randomBytes(24).toString("base64url");
 
   const server = http.createServer(async (req, res) => {
@@ -237,7 +308,12 @@ async function main() {
 
     if (req.method === "GET" && url.pathname === "/campaign-items") {
       res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify(contentCatalog ?? {}));
+      return res.end(JSON.stringify(resolvedCatalog));
+    }
+
+    if (req.method === "GET" && url.pathname === "/open-issue-counts") {
+      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      return res.end(JSON.stringify(openIssueCounts));
     }
 
     if (req.method === "POST" && url.pathname === "/kill") {
@@ -305,6 +381,27 @@ async function main() {
         res.end();
       }
       return;
+    }
+
+    if (req.method === "GET" && (url.pathname === "/run-judge" || url.pathname === "/run-fixer")) {
+      if (url.searchParams.get("token") !== token) {
+        res.statusCode = 401;
+        return res.end();
+      }
+      const workflowFile =
+        url.pathname === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
+      const noop = () => {};
+      try {
+        const beforeMs = Date.now();
+        await triggerWorkflow(targetRepo, {}, noop, workflowFile);
+        const runId = await waitForRunId(targetRepo, beforeMs, noop);
+        await watchRun(runId, targetRepo, noop);
+        res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+        return res.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+      }
     }
 
     if (req.method === "GET" && url.pathname === "/github/issues") {

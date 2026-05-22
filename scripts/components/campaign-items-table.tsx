@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,156 +7,76 @@ import {
   createColumnHelper,
 } from "@tanstack/react-table";
 import { Check, CircleSlash, Clock, SkipForward } from "lucide-react";
-import { fetchCampaignItems } from "../services/contenthawk-service.ts";
-import type { ContentCatalog, CheckResult } from "../types.ts";
+import type { ResolvedItem } from "../types.ts";
 
-type ItemGroup = "issue" | "skipped" | "pending";
+// function ruleSlug(path: string): string {
+//   const parts = path.split("/");
+//   return parts[parts.length - 2] ?? path;
+// }
 
-interface FlatItem {
-  campaign: string;
-  path: string;
-  checkResult: CheckResult;
-  lastUpdated: string;
-  group: ItemGroup;
+function itemOrder(item: ResolvedItem): number {
+  if (item.__typename === "open_issue") return 0;
+  if (item.__typename === "closed_issue") return 1;
+  if (item.__typename === "skipped") return 2;
+  return 3;
 }
 
-const GROUP_ORDER: Record<ItemGroup, number> = { issue: 0, skipped: 1, pending: 2 };
+function StatusCell({ item }: { item: ResolvedItem }) {
+  switch (item.__typename) {
+    case "open_issue":
+      return <span className="font-mono text-xs text-[#0969da]">#{item.issueNumber}</span>;
 
-function groupOf(checkResult: CheckResult): ItemGroup {
-  if (typeof checkResult === "number") return "issue";
-  if (checkResult === "skipped") return "skipped";
-  return "pending";
-}
-
-function ruleSlug(path: string): string {
-  const parts = path.split("/");
-  return parts[parts.length - 2] ?? path;
-}
-
-const columnHelper = createColumnHelper<FlatItem>();
-
-function IssueStatusCell({
-  owner,
-  repo,
-  issue,
-  token,
-}: {
-  owner: string;
-  repo: string;
-  issue: number;
-  token: string;
-}) {
-  const [issueData, setIssueData] = useState<{
-    state: string;
-    state_reason: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams({ token, owner, repo, issue_number: String(issue) });
-    fetch(`/github/issues?${params}`)
-      .then((r) => r.json())
-      .then((data: { state: string; state_reason: string | null }) => setIssueData(data))
-      .catch(() => {});
-  }, [owner, repo, issue, token]);
-
-  if (!issueData) {
-    return <span className="font-mono text-xs text-[#0969da]">#{issue}</span>;
-  }
-
-  if (issueData.state === "closed") {
-    if (issueData.state_reason === "not_planned") {
+    case "closed_issue":
+      if (item.stateReason === "not_planned") {
+        return (
+          <span className="flex items-center gap-1 font-mono text-xs text-[#555]">
+            <CircleSlash size={12} />#{item.issueNumber}
+          </span>
+        );
+      }
       return (
-        <span className="flex items-center gap-1 font-mono text-xs text-[#555]">
-          <CircleSlash size={12} />#{issue}
+        <span className="flex items-center gap-1 font-mono text-xs text-[#1a7f37]">
+          <Check size={12} />#{item.issueNumber}
         </span>
       );
-    }
-    return (
-      <span className="flex items-center gap-1 font-mono text-xs text-[#1a7f37]">
-        <Check size={12} />#{issue}
-      </span>
-    );
-  }
 
-  return <span className="font-mono text-xs text-[#0969da]">#{issue}</span>;
+    case "skipped":
+      return (
+        <span className="flex items-center gap-1 text-xs text-[#555]">
+          <SkipForward size={12} />Skipped
+        </span>
+      );
+
+    case "pending":
+    default:
+      return (
+        <span className="flex items-center gap-1 text-xs text-[#555]">
+          <Clock size={12} />Pending
+        </span>
+      );
+  }
 }
 
-function StatusCell({ row }: { row: FlatItem; owner: string; repo: string }) {
-  if (row.group === "skipped") {
-    return (
-      <span className="flex items-center gap-1 text-xs text-[#555]">
-        <SkipForward size={12} />
-        Skipped
-      </span>
-    );
-  }
-  if (row.group === "pending") {
-    return (
-      <span className="flex items-center gap-1 text-xs text-[#555]">
-        <Clock size={12} />
-        Pending
-      </span>
-    );
-  }
-  return null;
-}
+const columnHelper = createColumnHelper<ResolvedItem>();
 
 export function CampaignItemsTable({
-  targetRepo,
-  token,
+  items,
   selectedCampaign,
 }: {
-  targetRepo: string;
-  token: string;
+  items: ResolvedItem[];
   selectedCampaign: string | null;
 }) {
-  const [catalog, setCatalog] = useState<ContentCatalog>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchCampaignItems(token)
-      .then(setCatalog)
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  const [owner, repo] = targetRepo.split("/");
-
-  const flatItems = useMemo<FlatItem[]>(() => {
-    const items: FlatItem[] = [];
-    for (const [campaign, contentItems] of Object.entries(catalog)) {
-      if (selectedCampaign && campaign !== selectedCampaign) continue;
-      for (const item of contentItems) {
-        items.push({
-          campaign,
-          path: item.path,
-          checkResult: item.checkResult,
-          lastUpdated: item.lastUpdated,
-          group: groupOf(item.checkResult),
-        });
-      }
-    }
-    return items.sort((a, b) => GROUP_ORDER[a.group] - GROUP_ORDER[b.group]);
-  }, [catalog, selectedCampaign]);
+  const sorted = useMemo(
+    () => [...items].sort((a, b) => itemOrder(a) - itemOrder(b)),
+    [items],
+  );
 
   const columns = useMemo(
     () => [
       columnHelper.display({
         id: "status",
         header: "Status",
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.group === "issue") {
-            return (
-              <IssueStatusCell
-                owner={owner}
-                repo={repo}
-                issue={item.checkResult as number}
-                token={token}
-              />
-            );
-          }
-          return <StatusCell row={item} owner={owner} repo={repo} />;
-        },
+        cell: ({ row }) => <StatusCell item={row.original} />,
       }),
       columnHelper.accessor("path", {
         header: "Rule",
@@ -165,27 +85,16 @@ export function CampaignItemsTable({
             className="font-mono text-xs text-[#1a1a1a] truncate block max-w-45"
             title={info.getValue()}
           >
-            {ruleSlug(info.getValue())}
-          </span>
-        ),
-      }),
-      columnHelper.accessor("campaign", {
-        header: "Campaign",
-        cell: (info) => (
-          <span
-            className="font-mono text-xs text-[#555] truncate block max-w-35"
-            title={info.getValue()}
-          >
             {info.getValue()}
           </span>
         ),
       }),
     ],
-    [owner, repo],
+    [],
   );
 
   const table = useReactTable({
-    data: flatItems,
+    data: sorted,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -197,10 +106,7 @@ export function CampaignItemsTable({
       <p className="text-sm text-[#555] mt-4">Select a campaign above to view its items.</p>
     );
   }
-  if (loading) {
-    return <p className="text-sm text-[#555] mt-6">Loading items…</p>;
-  }
-  if (flatItems.length === 0) return null;
+  if (sorted.length === 0) return null;
 
   const rows = table.getRowModel().rows;
 
@@ -210,7 +116,7 @@ export function CampaignItemsTable({
         Items
       </h2>
       <div className="border border-gray-200 rounded overflow-hidden">
-        <table className="w-full text-sm border-collapse">
+        <table className="w-full table-auto text-sm border-collapse">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="bg-gray-50 border-b border-gray-200">
@@ -228,8 +134,8 @@ export function CampaignItemsTable({
           <tbody>
             {rows.map((row) => (
               <tr key={row.id} className="border-t border-gray-100 hover:bg-gray-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-3 py-2 align-middle">
+                {row.getVisibleCells().map((cell,i) => (
+                  <td key={cell.id} className={"px-3 py-2 align-middle "+ (i === 0 ? "w-1/3" : "w-2/3")}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

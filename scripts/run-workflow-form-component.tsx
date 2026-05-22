@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./components/buttons";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
-import { fetchCampaignStatuses } from "./services/contenthawk-service";
+import { CampaignActions } from "./components/campaign-actions";
+import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
+import type { ResolvedCatalog } from "./types";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
 
@@ -65,11 +67,13 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<ResolvedCatalog>({});
+  const [openIssueCounts, setOpenIssueCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-
-
     fetchCampaignStatuses(token).then(setCampaignStatuses);
+    fetchCampaignItems(token).then(setCatalog);
+    fetchOpenIssueCounts(token).then(setOpenIssueCounts);
   }, [token]);
   const [log, setLog] = useState<LogEvent[]>([]);
   const [values, setValues] = useState<Record<FieldName, string>>(
@@ -233,9 +237,29 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
               />
             )
             : <p className="text-sm text-[#555]">No campaign data available.</p>}
+          {selectedCampaign && (
+            <CampaignActions
+              openIssueCount={openIssueCounts[selectedCampaign] ?? 0}
+              onGenerateIssues={async () => {
+                const res = await fetch(`/run-judge?token=${encodeURIComponent(token)}`);
+                if (!res.ok) {
+                  const body = await res.json().catch(() => ({})) as { error?: string };
+                  throw new Error(body.error ?? `Request failed: ${res.status}`);
+                }
+              }}
+              onFixIssues={async () => {
+                const res = await fetch(`/run-fixer?token=${encodeURIComponent(token)}`);
+                if (!res.ok) {
+                  const body = await res.json().catch(() => ({})) as { error?: string };
+                  throw new Error(body.error ?? `Request failed: ${res.status}`);
+                }
+              }}
+              issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
+              pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
+            />
+          )}
           <CampaignItemsTable
-            targetRepo={targetRepo}
-            token={token}
+            items={catalog[selectedCampaign ?? ""] ?? []}
             selectedCampaign={selectedCampaign}
           />
         </>
