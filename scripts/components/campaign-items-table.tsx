@@ -7,7 +7,6 @@ import {
   createColumnHelper,
 } from "@tanstack/react-table";
 import { Check, CircleSlash, Clock, SkipForward } from "lucide-react";
-import { useOctokit } from "../contexts/octokit-context.tsx";
 import { fetchCampaignItems } from "../services/contenthawk-service.ts";
 import type { ContentCatalog, CheckResult } from "../types.ts";
 
@@ -40,25 +39,25 @@ function IssueStatusCell({
   owner,
   repo,
   issue,
+  token,
 }: {
   owner: string;
   repo: string;
   issue: number;
+  token: string;
 }) {
-  const octokit = useOctokit();
   const [issueData, setIssueData] = useState<{
     state: string;
     state_reason: string | null;
   } | null>(null);
 
   useEffect(() => {
-    octokit.rest.issues
-      .get({ owner, repo, issue_number: issue })
-      .then(({ data }) =>
-        setIssueData({ state: data.state, state_reason: data.state_reason ?? null }),
-      )
+    const params = new URLSearchParams({ token, owner, repo, issue_number: String(issue) });
+    fetch(`/github/issues?${params}`)
+      .then((r) => r.json())
+      .then((data: { state: string; state_reason: string | null }) => setIssueData(data))
       .catch(() => {});
-  }, [owner, repo, issue]);
+  }, [owner, repo, issue, token]);
 
   if (!issueData) {
     return <span className="font-mono text-xs text-[#0969da]">#{issue}</span>;
@@ -152,6 +151,7 @@ export function CampaignItemsTable({
                 owner={owner}
                 repo={repo}
                 issue={item.checkResult as number}
+                token={token}
               />
             );
           }

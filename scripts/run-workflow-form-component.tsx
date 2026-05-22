@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./components/buttons";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
-import { OctokitProvider } from "./contexts/octokit-context";
 import { fetchCampaignStatuses } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 
@@ -224,7 +223,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
       )}
 
       {tab === "progress" && (
-        <OctokitProvider>
+        <>
           {campaignStatuses.length > 0
             ? (
               <CampaignStatusPanel
@@ -239,7 +238,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
             token={token}
             selectedCampaign={selectedCampaign}
           />
-        </OctokitProvider>
+        </>
       )}
     </div>
   );

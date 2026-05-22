@@ -8,7 +8,7 @@ export function renderForm(
   css: string,
 ): string {
   const inner = renderToString(
-    <RunWorkflowForm targetRepo={targetRepo} token={token}  />,
+    <RunWorkflowForm targetRepo={targetRepo} token={token} />,
   );
   const props = JSON.stringify({ targetRepo, token });
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;

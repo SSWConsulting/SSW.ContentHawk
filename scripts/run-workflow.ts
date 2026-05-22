@@ -215,6 +215,9 @@ async function main() {
 
   checkGh();
 
+  const ghTokenResult = spawnSync("gh", ["auth", "token"], { encoding: "utf-8" });
+  const githubToken = ghTokenResult.status === 0 ? ghTokenResult.stdout.trim() : "";
+
   const [clientBundle, css] = await Promise.all([bundleClient(), buildCSS()]);
   const token = crypto.randomBytes(24).toString("base64url");
 
@@ -302,6 +305,27 @@ async function main() {
         res.end();
       }
       return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/github/issues") {
+      if (url.searchParams.get("token") !== token) {
+        res.statusCode = 401;
+        return res.end();
+      }
+      const owner = url.searchParams.get("owner");
+      const repo = url.searchParams.get("repo");
+      const issueNumber = url.searchParams.get("issue_number");
+      if (!owner || !repo || !issueNumber || !githubToken) {
+        res.statusCode = 400;
+        return res.end();
+      }
+      const ghRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+        { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+      );
+      const data = await ghRes.json() as { state: string; state_reason?: string | null };
+      res.writeHead(ghRes.status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      return res.end(JSON.stringify({ state: data.state, state_reason: data.state_reason ?? null }));
     }
 
     res.statusCode = 404;

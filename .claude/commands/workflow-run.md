@@ -1,6 +1,6 @@
 ---
 description: "Read all ContentHawk TODO snapshots, build a ContentCatalog JSON argument, and run the workflow runner for a target GitHub repo."
-allowed-tools: Read, Glob, Bash
+allowed-tools: Read, Bash, WebFetch
 ---
 
 # ContentHawk — Workflow Runner
@@ -42,9 +42,15 @@ const contentCatalog: ContentCatalog = {};
 
 ### Step 3 — Discover snapshot files
 
-Glob all files matching `.github/ContentHawk/TODO/*.md`.
+Use the GitHub REST API to list the contents of the TODO folder in the target repo:
 
-Read each file.
+```bash
+gh api repos/<owner/repo>/contents/.github/ContentHawk/TODO
+```
+
+This returns a JSON array of file objects. Filter for entries where `name` ends with `.md`.
+
+For each `.md` file, fetch its raw content using `WebFetch` on the file's `download_url` field from the API response.
 
 ### Step 4 — Parse each snapshot file
 
