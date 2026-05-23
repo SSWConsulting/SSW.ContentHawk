@@ -6,6 +6,7 @@ import { CampaignActions } from "./components/campaign-actions";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { FormInput, FormTextarea } from "./components/form-controls";
 import { Card, CardContent } from "./components/ui/card";
+import { GridPattern } from "./components/ui/grid-pattern";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 import type { ResolvedCatalog } from "./types";
@@ -142,8 +143,16 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
       : "px-4 py-2 text-sm text-muted-foreground border-b-2 border-transparent -mb-px hover:text-foreground";
 
   return (
+    <>
+    <GridPattern
+        width={30}
+        height={30}
+        className="stroke-white/5 fill-white/5 [mask-image:linear-gradient(to_bottom_right,white,transparent)]"
+      />
     <TooltipProvider>
-    <div className="font-sans max-w-[540px] mx-auto my-16 text-foreground">
+    
+      
+    <div className="relative font-sans max-w-[540px] mx-auto py-16 text-foreground">
       <Card>
       <CardContent>
       <p className="font-mono text-sm text-muted-foreground mb-4">{targetRepo}</p>
@@ -264,6 +273,8 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
       </CardContent>
       </Card>
     </div>
+    
     </TooltipProvider>
+    </>
   );
 }
