@@ -144,11 +144,8 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
   return (
     <>
-    <GridPattern
-        width={30}
-        height={30}
-        className="stroke-white/5 fill-white/5 [mask-image:linear-gradient(to_bottom_right,white,transparent)]"
-      />
+
+    <img src="/polygon-bg.svg" aria-hidden="true" alt="ContentHawk Logo" className="absolute mix-blend-color-burn -z-1 opacity-35 inset-0" />
     <TooltipProvider>
     
       

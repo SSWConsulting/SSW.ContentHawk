@@ -326,6 +326,21 @@ async function main() {
       return res.end(clientBundle);
     }
 
+    if (req.method === "GET" && url.pathname === "/logo.png") {
+      const logoPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "ssw-logo.png");
+      const logo = await fs.readFile(logoPath);
+      res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "max-age=3600" });
+      return res.end(logo);
+    }
+
+    if (req.method === "GET" && url.pathname === "/polygon-bg.svg") {
+      const logoPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "polygon-bg.svg");
+      const logo = await fs.readFile(logoPath);
+      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "max-age=3600" });
+      return res.end(logo);
+    }
+
+
     if (req.method === "GET" && url.pathname === "/run-workflow-stream") {
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
