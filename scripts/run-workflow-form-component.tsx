@@ -3,7 +3,7 @@ import { Button } from "./components/ui/button";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
-import { Check, X } from 'lucide-react';
+import { Check, X, ExternalLink } from 'lucide-react';
 
 import { TooltipProvider } from "./components/ui/tooltip";
 import { FormInput, FormTextarea } from "./components/form-controls";
@@ -95,6 +95,7 @@ export interface NewCampaignPageProps {
 export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<LogEvent[]>([]);
+  const [prUrl, setPrUrl] = useState<string | null>(null);
   const [values, setValues] = useState<Record<FieldName, string>>(
     Object.fromEntries(FIELDS.map((f) => [f.name, ""])) as Record<FieldName, string>,
   );
@@ -127,10 +128,20 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
       const event = JSON.parse((e as MessageEvent).data) as LogEvent;
       setLog((prev) => [...prev, event]);
     });
-    es.addEventListener("done", () => {
+    es.addEventListener("done", async (e: Event) => {
       es.close();
       setStatus("done");
-      setTimeout(() => fetch("/kill", { method: "POST" }), 2000);
+      const data = (e as MessageEvent).data ? JSON.parse((e as MessageEvent).data) as { runId?: string } : {};
+      if (data.runId) {
+        try {
+          const prRes = await fetch(`/github/pr-for-run?token=${encodeURIComponent(token)}&run_id=${encodeURIComponent(data.runId)}`);
+          if (prRes.ok) {
+            const prData = await prRes.json() as { url: string | null };
+            if (prData.url) setPrUrl(prData.url);
+          }
+        } catch { /* best-effort */ }
+      }
+      setTimeout(() => fetch("/kill", { method: "POST" }), 30000);
     });
     es.addEventListener("failed", (e: Event) => {
       es.close();
@@ -195,7 +206,14 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
 
       {status === "running" && <Button disabled>Running...</Button>}
       {status === "done" && (
-        <p className="text-green-500 font-semibold text-sm"><Check /> Workflow completed successfully.</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-green-500 font-semibold text-sm flex items-center gap-1"><Check className="size-4" /> Workflow completed successfully.</p>
+          {prUrl && (
+            <a href={prUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline font-mono">
+              <ExternalLink className="size-3.5" /> View generated PR
+            </a>
+          )}
+        </div>
       )}
       {status === "error" && (
         <p className="text-destructive font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>

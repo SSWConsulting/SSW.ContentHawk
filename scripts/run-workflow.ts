@@ -395,7 +395,7 @@ async function main() {
         await triggerWorkflow(targetRepo, requestFields as Record<WorkflowFieldName, string>, sendLine);
         const runId = await waitForRunId(targetRepo, beforeMs, log);
         await watchRun(runId, targetRepo, sendLine);
-        res.write("event: done\ndata: {}\n\n");
+        res.write(`event: done\ndata: ${JSON.stringify({ runId })}\n\n`);
       } catch (err) {
         res.write(
           `event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`,
@@ -443,6 +443,31 @@ async function main() {
         res.end();
       }
       return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/github/pr-for-run") {
+      if (url.searchParams.get("token") !== token) {
+        res.statusCode = 401;
+        return res.end();
+      }
+      const runId = url.searchParams.get("run_id");
+      if (!runId || !githubToken) {
+        res.statusCode = 400;
+        return res.end();
+      }
+      const [owner, repo] = targetRepo.split("/");
+      const searchRes = await fetch(
+        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"id: ${runId}"+in:body`,
+        { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+      );
+      if (!searchRes.ok) {
+        res.statusCode = 502;
+        return res.end();
+      }
+      const data = await searchRes.json() as { items: Array<{ html_url: string; number: number; title: string }> };
+      const pr = data.items[0] ?? null;
+      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      return res.end(JSON.stringify({ url: pr?.html_url ?? null, number: pr?.number ?? null, title: pr?.title ?? null }));
     }
 
     if (req.method === "GET" && url.pathname === "/github/issues") {

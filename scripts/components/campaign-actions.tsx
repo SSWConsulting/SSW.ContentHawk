@@ -72,7 +72,7 @@ export function CampaignActions({
           onClick={() => runStream("judge", judgeStreamUrl)}
           disabled={running !== null}
         >
-          {running === "judge" ? "Running\u2026" : "Generate Issues"}
+          {running === "judge" ? "Running..." : "Generate Issues"}
         </Button>
         <Button
           type="button"
@@ -80,7 +80,7 @@ export function CampaignActions({
           onClick={() => runStream("fixer", fixerStreamUrl)}
           disabled={running !== null || openIssueCount === 0}
         >
-          {running === "fixer" ? "Running\u2026" : "Fix Issues"}
+          {running === "fixer" ? "Running..." : "Fix Issues"}
         </Button>
       </div>
 
@@ -97,7 +97,7 @@ export function CampaignActions({
       {result === "judge" && (
         <p className="mt-3 text-sm">
           <a href={issuesUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-            View open issues \u2192
+            View open issues
           </a>
         </p>
       )}
