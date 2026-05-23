@@ -4,6 +4,7 @@ import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-statu
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { FormInput, FormTextarea } from "./components/form-controls";
 import { Card, CardContent } from "./components/ui/card";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
@@ -167,28 +168,28 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
             <div className="bg-muted rounded-lg p-4">
             <form onSubmit={startRun} noValidate>
               {FIELDS.map((field) => (
-                <label key={field.name} className="block my-5">
+                <label key={field.name} className="block my-5 first:mt-0">
                   <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
                     {field.label}
                   </span>
                   <span className="block text-xs text-[#555] mb-1.5">{field.description}</span>
                   {field.multiline ? (
-                    <textarea
+                    <FormTextarea
                       name={field.name}
                       rows={3}
                       placeholder={field.placeholder}
                       value={values[field.name]}
                       onChange={(e) => handleChange(field.name, e.target.value)}
-                      className={`${inputClass} resize-y`}
+                      className="resize-y font-mono"
                     />
                   ) : (
-                    <input
+                    <FormInput
                       type="text"
                       name={field.name}
                       placeholder={field.placeholder}
                       value={values[field.name]}
                       onChange={(e) => handleChange(field.name, e.target.value)}
-                      className={inputClass}
+                      className="font-mono"
                     />
                   )}
                   {fieldErrors[field.name] && (
