@@ -4,6 +4,7 @@ import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-statu
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { Card, CardContent } from "./components/ui/card";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 import type { ResolvedCatalog } from "./types";
@@ -141,7 +142,9 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
   return (
     <TooltipProvider>
-    <div className="font-sans max-w-[540px] mx-auto my-16 px-4 text-[#1a1a1a]">
+    <div className="font-sans max-w-[540px] mx-auto my-16 text-[#1a1a1a]">
+      <Card>
+      <CardContent>
       <div className="flex border-b border-[#ccc] mb-6">
         <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
           New Campaign
@@ -161,6 +164,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
           </p>
 
           {(status === "idle" || status === "error") && (
+            <div className="bg-muted rounded-lg p-4">
             <form onSubmit={startRun} noValidate>
               {FIELDS.map((field) => (
                 <label key={field.name} className="block my-5">
@@ -194,6 +198,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
               ))}
               <Button type="submit">Run Workflow</Button>
             </form>
+            </div>
           )}
 
           {status === "running" && <Button disabled>Running\u2026</Button>}
@@ -254,6 +259,8 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
           />
         </>
       )}
+      </CardContent>
+      </Card>
     </div>
     </TooltipProvider>
   );

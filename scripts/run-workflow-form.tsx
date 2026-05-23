@@ -19,7 +19,7 @@ export function renderForm(
 <title>Run ContentHawk Workflow \u2014 ${targetRepo}</title>
 <style>${css}</style>
 </head>
-<body>
+<body class="bg-ssw-gray-dark dark">
 <div id="app">${inner}</div>
 <script id="__PROPS__" type="application/json">${props}</script>
 <script src="${bundleSrc}"></script>
