@@ -172,7 +172,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
                   <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
                     {field.label}
                   </span>
-                  <span className="block text-xs text-[#555] mb-1.5">{field.description}</span>
+                  <span className="block text-xs text-muted-foreground mb-1.5">{field.description}</span>
                   {field.multiline ? (
                     <FormTextarea
                       name={field.name}
