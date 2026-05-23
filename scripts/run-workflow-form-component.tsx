@@ -3,10 +3,11 @@ import { Button } from "./components/ui/button";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
+import { Check, X } from 'lucide-react';
+
 import { TooltipProvider } from "./components/ui/tooltip";
 import { FormInput, FormTextarea } from "./components/form-controls";
 import { Card, CardContent } from "./components/ui/card";
-import { GridPattern } from "./components/ui/grid-pattern";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 import type { ResolvedCatalog } from "./types";
@@ -192,12 +193,12 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
         </div>
       )}
 
-      {status === "running" && <Button disabled>Running\u2026</Button>}
+      {status === "running" && <Button disabled>Running...</Button>}
       {status === "done" && (
-        <p className="text-green-500 font-semibold text-sm">\u2713 Workflow completed successfully.</p>
+        <p className="text-green-500 font-semibold text-sm"><Check /> Workflow completed successfully.</p>
       )}
       {status === "error" && (
-        <p className="text-destructive font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
+        <p className="text-destructive font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>
       )}
 
       {log.length > 0 && (
