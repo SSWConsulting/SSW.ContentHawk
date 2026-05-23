@@ -146,6 +146,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
     <div className="font-sans max-w-[540px] mx-auto my-16 text-foreground">
       <Card>
       <CardContent>
+      <p className="font-mono text-sm text-muted-foreground mb-4">{targetRepo}</p>
       <div className="flex border-b border-border mb-6">
         <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
           New Campaign
@@ -157,9 +158,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
       {tab === "run" && (
         <>
-          <h1 className="text-xl mb-0">Run ContentHawk Workflow</h1>
-          <p className="text-[#555] font-mono mt-1">{targetRepo}</p>
-          <p className="text-sm text-[#555] mt-3 mb-6">
+          <p className="text-sm text-muted-foreground mb-6">
             Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this
             repository.
           </p>

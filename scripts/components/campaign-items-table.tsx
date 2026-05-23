@@ -6,7 +6,7 @@ import {
   flexRender,
   createColumnHelper,
 } from "@tanstack/react-table";
-import { Check, CircleSlash, Clock, SkipForward } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleSlash, Clock, SkipForward } from "lucide-react";
 import type { ResolvedItem } from "../types.ts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
@@ -158,7 +158,7 @@ export function CampaignItemsTable({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            ← Prev
+            <ChevronLeft /> Prev
           </Button>
           <Button
             type="button"
@@ -167,7 +167,7 @@ export function CampaignItemsTable({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            Next →
+            Next <ChevronRight />
           </Button>
         </div>
       </div>
