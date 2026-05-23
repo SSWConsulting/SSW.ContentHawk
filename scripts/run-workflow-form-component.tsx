@@ -197,7 +197,9 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
                   )}
                 </label>
               ))}
-              <Button size="lg" type="submit">Run Workflow</Button>
+              <div className="flex justify-end">
+                <Button size="lg" type="submit">Run Workflow</Button>
+              </div>
             </form>
             </div>
           )}
