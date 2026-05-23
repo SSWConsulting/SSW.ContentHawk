@@ -46,7 +46,7 @@ export function CampaignStatusPanel({
   const selectable = Boolean(onSelectCampaign);
   return (
     <div className="mb-6 rounded p-4 bg-muted">
-      <h2 className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide mb-3">
+      <h2 className="text-xs font-semibold font-mono text-foreground uppercase tracking-wide mb-3">
         Campaigns
       </h2>
       <ul className="flex flex-col gap-2">

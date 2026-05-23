@@ -113,7 +113,7 @@ export function CampaignItemsTable({
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide mb-3">
+      <h2 className="text-xs font-semibold font-mono text-foreground uppercase tracking-wide mb-3">
         Items
       </h2>
       <div className="border border-border rounded overflow-hidden">
