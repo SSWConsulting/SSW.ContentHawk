@@ -144,8 +144,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
   return (
     <>
-
-    <img src="/polygon-bg.svg" aria-hidden="true" alt="ContentHawk Logo" className="absolute mix-blend-color-burn -z-1 opacity-35 inset-0" />
+    <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
     <TooltipProvider>
     
       
