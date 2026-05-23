@@ -1,22 +1,22 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { RunWorkflowForm } from "./run-workflow-form-component.tsx";
+import { NewCampaignPage, CampaignsPage } from "./run-workflow-form-component.tsx";
 
 export function renderForm(
   targetRepo: string,
   token: string,
   css: string,
+  page: "new-campaign" | "campaigns",
 ): string {
-  const inner = renderToString(
-    <RunWorkflowForm targetRepo={targetRepo} token={token} />,
-  );
-  const props = JSON.stringify({ targetRepo, token });
+  const Component = page === "campaigns" ? CampaignsPage : NewCampaignPage;
+  const inner = renderToString(<Component targetRepo={targetRepo} token={token} />);
+  const props = JSON.stringify({ page, targetRepo, token });
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Run ContentHawk Workflow \u2014 ${targetRepo}</title>
+<title>ContentHawk \u2014 ${targetRepo}</title>
 <style>${css}</style>
 </head>
 <body class="bg-ssw-gray-dark dark relative max-h-screen overflow-hidden">

@@ -244,19 +244,26 @@ function computeCampaignStatuses(catalog: ContentCatalog): CampaignStatus[] {
   });
 }
 
-function parseArgs(argv: string[]): { targetRepo: string; contentCatalog: ContentCatalog | null } {
-  const targetRepo = argv[0];
+type FormMode = "new-campaign" | "campaigns";
+
+function parseArgs(argv: string[]): { targetRepo: string; form: FormMode; contentCatalog: ContentCatalog | null } {
+  const form = argv[0];
+  if (form !== "new-campaign" && form !== "campaigns") {
+    die("Usage: run-workflow.ts <new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
+  }
+
+  const targetRepo = argv[1];
   if (
     !targetRepo ||
     !targetRepo.includes("/") ||
     targetRepo.startsWith("/") ||
     targetRepo.endsWith("/")
   ) {
-    die("Usage: run-workflow.ts <owner/repo> [<content-catalog-json>]");
+    die("Usage: run-workflow.ts <new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
   }
 
-  const catalogJson = argv[1];
-  if (!catalogJson) return { targetRepo, contentCatalog: null };
+  const catalogJson = argv[2];
+  if (!catalogJson) return { targetRepo, form, contentCatalog: null };
 
   let parsed: unknown;
   try {
@@ -273,11 +280,11 @@ function parseArgs(argv: string[]): { targetRepo: string; contentCatalog: Conten
     if (!Array.isArray(val)) die("content catalog: each entry must be an array of ContentItems");
   }
 
-  return { targetRepo, contentCatalog: parsed as ContentCatalog };
+  return { targetRepo, form, contentCatalog: parsed as ContentCatalog };
 }
 
 async function main() {
-  const { targetRepo, contentCatalog } = parseArgs(process.argv.slice(2));
+  const { targetRepo, form, contentCatalog } = parseArgs(process.argv.slice(2));
 
   checkGh();
 
@@ -298,7 +305,7 @@ async function main() {
 
     if (req.method === "GET" && url.pathname === "/") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      return res.end(renderForm(targetRepo, token, css));
+      return res.end(renderForm(targetRepo, token, css, form));
     }
 
     if (req.method === "GET" && url.pathname === "/campaign-statuses") {

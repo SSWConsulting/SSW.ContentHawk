@@ -60,25 +60,39 @@ const FIELDS = [
 
 type FieldName = (typeof FIELDS)[number]["name"];
 
-export interface RunWorkflowFormProps {
+interface PageShellProps {
   targetRepo: string;
-  token: string;
-  campaignStatuses?: CampaignStatus[];
+  children: React.ReactNode;
 }
 
-export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
-  const [tab, setTab] = useState<"run" | "progress">("run");
-  const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
-  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
-  const [catalog, setCatalog] = useState<ResolvedCatalog>({});
-  const [openIssueCounts, setOpenIssueCounts] = useState<Record<string, number>>({});
+function PageShell({ targetRepo, children }: PageShellProps) {
+  return (
+    <>    <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
 
-  useEffect(() => {
-    fetchCampaignStatuses(token).then(setCampaignStatuses);
-    fetchCampaignItems(token).then(setCatalog);
-    fetchOpenIssueCounts(token).then(setOpenIssueCounts);
-  }, [token]);
+    <TooltipProvider>
+      
+        
+        <div className="relative font-sans max-w-[540px] mx-auto py-16 text-foreground">
+          <Card>
+            <CardContent>
+              <p className="font-mono text-sm text-muted-foreground mb-4">{targetRepo}</p>
+              {children}
+            </CardContent>
+          </Card>
+        </div>
+      
+    </TooltipProvider>
+    </>
+  );
+}
+
+export interface NewCampaignPageProps {
+  targetRepo: string;
+  token: string;
+}
+
+export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
+  const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<LogEvent[]>([]);
   const [values, setValues] = useState<Record<FieldName, string>>(
     Object.fromEntries(FIELDS.map((f) => [f.name, ""])) as Record<FieldName, string>,
@@ -134,143 +148,118 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
     };
   }
 
-  const inputClass =
-    "w-full py-[0.55rem] px-[0.65rem] font-mono border border-[#ccc] rounded box-border text-[0.95rem]";
+  return (
+    <PageShell targetRepo={targetRepo}>
+      <p className="text-sm text-muted-foreground mb-6">
+        Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this repository.
+      </p>
 
-  const tabClass = (t: "run" | "progress") =>
-    t === tab
-      ? "px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary -mb-px"
-      : "px-4 py-2 text-sm text-muted-foreground border-b-2 border-transparent -mb-px hover:text-foreground";
+      {(status === "idle" || status === "error") && (
+        <div className="bg-muted rounded-lg p-4">
+          <form onSubmit={startRun} noValidate>
+            {FIELDS.map((field) => (
+              <label key={field.name} className="block my-5 first:mt-0">
+                <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">{field.label}</span>
+                <span className="block text-xs text-muted-foreground mb-1.5">{field.description}</span>
+                {field.multiline ? (
+                  <FormTextarea
+                    name={field.name}
+                    rows={3}
+                    placeholder={field.placeholder}
+                    value={values[field.name]}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="resize-y font-mono"
+                  />
+                ) : (
+                  <FormInput
+                    type="text"
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={values[field.name]}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="font-mono"
+                  />
+                )}
+                {fieldErrors[field.name] && (
+                  <span className="block text-xs text-destructive mt-1">{fieldErrors[field.name]}</span>
+                )}
+              </label>
+            ))}
+            <div className="flex justify-end mt-2">
+              <Button size="lg" type="submit">Run Workflow</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {status === "running" && <Button disabled>Running\u2026</Button>}
+      {status === "done" && (
+        <p className="text-green-500 font-semibold text-sm">\u2713 Workflow completed successfully.</p>
+      )}
+      {status === "error" && (
+        <p className="text-destructive font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
+      )}
+
+      {log.length > 0 && (
+        <div className="mt-4 text-xs bg-card border border-border rounded p-3 max-h-64 overflow-y-auto font-mono">
+          {log.map((entry, i) =>
+            entry.type === "link" ? (
+              <a key={i} href={entry.url} target="_blank" rel="noopener noreferrer" className="block text-primary underline whitespace-pre-wrap">
+                {entry.message}
+              </a>
+            ) : (
+              <span key={i} className="block whitespace-pre-wrap text-muted-foreground">
+                {entry.message}
+              </span>
+            ),
+          )}
+        </div>
+      )}
+    </PageShell>
+  );
+}
+
+export interface CampaignsPageProps {
+  targetRepo: string;
+  token: string;
+}
+
+export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
+  const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<ResolvedCatalog>({});
+  const [openIssueCounts, setOpenIssueCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetchCampaignStatuses(token).then(setCampaignStatuses);
+    fetchCampaignItems(token).then(setCatalog);
+    fetchOpenIssueCounts(token).then(setOpenIssueCounts);
+  }, [token]);
 
   return (
-    <>
-    <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
-    <TooltipProvider>
-    
-      
-    <div className="relative font-sans max-w-[540px] mx-auto py-16 text-foreground">
-      <Card>
-      <CardContent>
-      <p className="font-mono text-sm text-muted-foreground mb-4">{targetRepo}</p>
-      <div className="flex border-b border-border mb-6">
-        <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
-          New Campaign
-        </button>
-        <button type="button" onClick={() => setTab("progress")} className={tabClass("progress")}>
-          Campaigns
-        </button>
-      </div>
-
-      {tab === "run" && (
-        <>
-          <p className="text-sm text-muted-foreground mb-6">
-            Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this
-            repository.
-          </p>
-
-          {(status === "idle" || status === "error") && (
-            <div className="bg-muted rounded-lg p-4">
-            <form onSubmit={startRun} noValidate>
-              {FIELDS.map((field) => (
-                <label key={field.name} className="block my-5 first:mt-0">
-                  <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">
-                    {field.label}
-                  </span>
-                  <span className="block text-xs text-muted-foreground mb-1.5">{field.description}</span>
-                  {field.multiline ? (
-                    <FormTextarea
-                      name={field.name}
-                      rows={3}
-                      placeholder={field.placeholder}
-                      value={values[field.name]}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
-                      className="resize-y font-mono"
-                    />
-                  ) : (
-                    <FormInput
-                      type="text"
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      value={values[field.name]}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
-                      className="font-mono"
-                    />
-                  )}
-                  {fieldErrors[field.name] && (
-                    <span className="block text-xs text-[#cf222e] mt-1">{fieldErrors[field.name]}</span>
-                  )}
-                </label>
-              ))}
-              <div className="flex justify-end">
-                <Button size="lg" type="submit">Run Workflow</Button>
-              </div>
-            </form>
-            </div>
-          )}
-
-          {status === "running" && <Button disabled>Running\u2026</Button>}
-          {status === "done" && (
-            <p className="text-[#1a7f37] font-semibold text-sm">\u2713 Workflow completed successfully.</p>
-          )}
-          {status === "error" && (
-            <p className="text-[#cf222e] font-semibold text-sm mt-3">\u2717 Workflow failed. See log above.</p>
-          )}
-
-          {log.length > 0 && (
-            <div className="mt-4 text-xs bg-gray-50 border border-gray-200 rounded p-3 max-h-64 overflow-y-auto font-mono">
-              {log.map((entry, i) =>
-                entry.type === "link" ? (
-                  <a
-                    key={i}
-                    href={entry.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-blue-600 underline whitespace-pre-wrap"
-                  >
-                    {entry.message}
-                  </a>
-                ) : (
-                  <span key={i} className="block whitespace-pre-wrap">
-                    {entry.message}
-                  </span>
-                ),
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {tab === "progress" && (
-        <>
-          {campaignStatuses.length > 0
-            ? (
-              <CampaignStatusPanel
-                statuses={campaignStatuses}
-                selectedCampaign={selectedCampaign}
-                onSelectCampaign={setSelectedCampaign}
-              />
-            )
-            : <p className="text-sm text-[#555]">No campaign data available.</p>}
-          {selectedCampaign && (
-            <CampaignActions
-              openIssueCount={openIssueCounts[selectedCampaign] ?? 0}
-              judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
-              fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
-              issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
-              pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
-            />
-          )}
-          <CampaignItemsTable
-            items={catalog[selectedCampaign ?? ""] ?? []}
+    <PageShell targetRepo={targetRepo}>
+      {campaignStatuses.length > 0
+        ? (
+          <CampaignStatusPanel
+            statuses={campaignStatuses}
             selectedCampaign={selectedCampaign}
+            onSelectCampaign={setSelectedCampaign}
           />
-        </>
+        )
+        : <p className="text-sm text-muted-foreground">No campaign data available.</p>}
+      {selectedCampaign && (
+        <CampaignActions
+          openIssueCount={openIssueCounts[selectedCampaign] ?? 0}
+          judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
+          fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
+          issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
+          pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
+        />
       )}
-      </CardContent>
-      </Card>
-    </div>
-    
-    </TooltipProvider>
-    </>
+      <CampaignItemsTable
+        items={catalog[selectedCampaign ?? ""] ?? []}
+        selectedCampaign={selectedCampaign}
+      />
+    </PageShell>
   );
 }
