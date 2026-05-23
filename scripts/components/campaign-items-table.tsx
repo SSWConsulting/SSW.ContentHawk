@@ -9,11 +9,7 @@ import {
 import { Check, CircleSlash, Clock, SkipForward } from "lucide-react";
 import type { ResolvedItem } from "../types.ts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-
-// function ruleSlug(path: string): string {
-//   const parts = path.split("/");
-//   return parts[parts.length - 2] ?? path;
-// }
+import { Button } from "./ui/button";
 
 function itemOrder(item: ResolvedItem): number {
   if (item.__typename === "open_issue") return 0;
@@ -25,25 +21,25 @@ function itemOrder(item: ResolvedItem): number {
 function StatusCell({ item }: { item: ResolvedItem }) {
   switch (item.__typename) {
     case "open_issue":
-      return <span className="font-mono text-xs text-[#0969da]">#{item.issueNumber}</span>;
+      return <span className="font-mono text-xs text-primary">#{item.issueNumber}</span>;
 
     case "closed_issue":
       if (item.stateReason === "not_planned") {
         return (
-          <span className="flex items-center gap-1 font-mono text-xs text-[#555]">
+          <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
             <CircleSlash size={12} />#{item.issueNumber}
           </span>
         );
       }
       return (
-        <span className="flex items-center gap-1 font-mono text-xs text-[#1a7f37]">
+        <span className="flex items-center gap-1 font-mono text-xs text-green-500">
           <Check size={12} />#{item.issueNumber}
         </span>
       );
 
     case "skipped":
       return (
-        <span className="flex items-center gap-1 text-xs text-[#555]">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <SkipForward size={12} />Skipped
         </span>
       );
@@ -51,7 +47,7 @@ function StatusCell({ item }: { item: ResolvedItem }) {
     case "pending":
     default:
       return (
-        <span className="flex items-center gap-1 text-xs text-[#555]">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock size={12} />Pending
         </span>
       );
@@ -84,7 +80,7 @@ export function CampaignItemsTable({
         cell: (info) => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="font-mono text-xs text-[#1a1a1a] truncate block max-w-45 cursor-default">
+              <span className="font-mono text-xs text-foreground truncate block max-w-45 cursor-default">
                 {info.getValue()}
               </span>
             </TooltipTrigger>
@@ -108,7 +104,7 @@ export function CampaignItemsTable({
 
   if (!selectedCampaign) {
     return (
-      <p className="text-sm text-[#555] mt-4">Select a campaign above to view its items.</p>
+      <p className="text-sm text-muted-foreground mt-4">Select a campaign above to view its items.</p>
     );
   }
   if (sorted.length === 0) return null;
@@ -117,18 +113,18 @@ export function CampaignItemsTable({
 
   return (
     <div className="mt-6">
-      <h2 className="text-xs font-semibold font-mono text-[#555] uppercase tracking-wide mb-3">
+      <h2 className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide mb-3">
         Items
       </h2>
-      <div className="border border-gray-200 rounded overflow-hidden">
+      <div className="border border-border rounded overflow-hidden">
         <table className="w-full table-auto text-sm border-collapse">
           <thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="bg-gray-50 border-b border-gray-200">
+              <tr key={hg.id} className="bg-muted border-b border-border">
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
-                    className="text-left px-3 py-2 text-xs font-semibold font-mono text-[#555] whitespace-nowrap"
+                    className="text-left px-3 py-2 text-xs font-semibold font-mono text-muted-foreground whitespace-nowrap"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -138,9 +134,9 @@ export function CampaignItemsTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id} className="border-t border-gray-100 hover:bg-gray-50">
-                {row.getVisibleCells().map((cell,i) => (
-                  <td key={cell.id} className={"px-3 py-2 align-middle "+ (i === 0 ? "w-1/3" : "w-2/3")}>
+              <tr key={row.id} className="border-t border-border hover:bg-muted/50">
+                {row.getVisibleCells().map((cell, i) => (
+                  <td key={cell.id} className={"px-3 py-2 align-middle " + (i === 0 ? "w-1/3" : "w-2/3")}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -150,27 +146,29 @@ export function CampaignItemsTable({
         </table>
       </div>
 
-      <div className="flex items-center justify-between mt-3 text-xs text-[#555]">
+      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
         <span>
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
         </span>
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="xs"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="px-2 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50"
           >
             ← Prev
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
+            size="xs"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="px-2 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50"
           >
             Next →
-          </button>
+          </Button>
         </div>
       </div>
     </div>
