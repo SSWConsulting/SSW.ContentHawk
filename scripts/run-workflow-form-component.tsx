@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "./components/buttons";
+import { Button } from "./components/ui/button";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
@@ -197,7 +197,7 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
                   )}
                 </label>
               ))}
-              <Button type="submit">Run Workflow</Button>
+              <Button size="lg" type="submit">Run Workflow</Button>
             </form>
             </div>
           )}

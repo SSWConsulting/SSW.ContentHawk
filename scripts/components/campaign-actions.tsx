@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "./buttons";
+import { Button } from "./ui/button";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
 
@@ -68,7 +68,7 @@ export function CampaignActions({
       <div className="flex gap-2">
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           onClick={() => runStream("judge", judgeStreamUrl)}
           disabled={running !== null}
         >
@@ -76,6 +76,7 @@ export function CampaignActions({
         </Button>
         <Button
           type="button"
+          variant="default"
           onClick={() => runStream("fixer", fixerStreamUrl)}
           disabled={running !== null || openIssueCount === 0}
         >
