@@ -137,15 +137,15 @@ export function RunWorkflowForm({ targetRepo, token }: RunWorkflowFormProps) {
 
   const tabClass = (t: "run" | "progress") =>
     t === tab
-      ? "px-4 py-2 text-sm font-semibold border-b-2 border-[#0969da] text-[#0969da] -mb-px"
-      : "px-4 py-2 text-sm text-[#555] border-b-2 border-transparent -mb-px hover:text-[#1a1a1a]";
+      ? "px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary -mb-px"
+      : "px-4 py-2 text-sm text-muted-foreground border-b-2 border-transparent -mb-px hover:text-foreground";
 
   return (
     <TooltipProvider>
-    <div className="font-sans max-w-[540px] mx-auto my-16 text-[#1a1a1a]">
+    <div className="font-sans max-w-[540px] mx-auto my-16 text-foreground">
       <Card>
       <CardContent>
-      <div className="flex border-b border-[#ccc] mb-6">
+      <div className="flex border-b border-border mb-6">
         <button type="button" onClick={() => setTab("run")} className={tabClass("run")}>
           New Campaign
         </button>
