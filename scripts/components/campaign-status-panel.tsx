@@ -45,7 +45,7 @@ export function CampaignStatusPanel({
   if (statuses.length === 0) return null;
   const selectable = Boolean(onSelectCampaign);
   return (
-    <div className="mb-6 border border-border rounded p-4 bg-muted">
+    <div className="mb-6 rounded p-4 bg-muted">
       <h2 className="text-xs font-semibold font-mono text-muted-foreground uppercase tracking-wide mb-3">
         Campaigns
       </h2>

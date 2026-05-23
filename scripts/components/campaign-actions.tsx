@@ -58,17 +58,17 @@ export function CampaignActions({
   }
 
   return (
-    <div className="mt-4 mb-2 p-4 border border-gray-200 rounded bg-gray-50">
-      <p className="text-xs font-mono text-[#555] mb-3">
+    <div className="mt-4 mb-2 p-4 rounded bg-muted">
+      <p className="text-xs font-mono text-muted-foreground mb-3">
         Open Issues:{" "}
-        <span className={`font-semibold ${openIssueCount > 0 ? "text-[#1a1a1a]" : "text-[#aaa]"}`}>
+        <span className={`font-semibold ${openIssueCount > 0 ? "text-foreground" : "text-muted-foreground"}`}>
           {openIssueCount}
         </span>
       </p>
       <div className="flex gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           onClick={() => runStream("judge", judgeStreamUrl)}
           disabled={running !== null}
         >
@@ -76,7 +76,7 @@ export function CampaignActions({
         </Button>
         <Button
           type="button"
-          variant="default"
+          variant="outline"
           onClick={() => runStream("fixer", fixerStreamUrl)}
           disabled={running !== null || openIssueCount === 0}
         >
@@ -85,32 +85,30 @@ export function CampaignActions({
       </div>
 
       {log.length > 0 && (
-        <div className="mt-3 text-xs bg-white border border-gray-200 rounded p-3 max-h-48 overflow-y-auto font-mono">
+        <div className="mt-3 text-xs bg-card border border-border rounded p-3 max-h-48 overflow-y-auto font-mono">
           {log.map((entry, i) =>
-            
-              <span key={i} className="block whitespace-pre-wrap text-[#555]">
-                {entry.message}
-              </span>
-            
+            <span key={i} className="block whitespace-pre-wrap text-muted-foreground">
+              {entry.message}
+            </span>
           )}
         </div>
       )}
 
       {result === "judge" && (
         <p className="mt-3 text-sm">
-          <a href={issuesUrl} target="_blank" rel="noopener noreferrer" className="text-[#0969da] underline">
+          <a href={issuesUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
             View open issues \u2192
           </a>
         </p>
       )}
       {result === "fixer" && (
         <p className="mt-3 text-sm">
-          <a href={pullsUrl} target="_blank" rel="noopener noreferrer" className="text-[#0969da] underline">
+          <a href={pullsUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
             View open PRs \u2192
           </a>
         </p>
       )}
-      {error && <p className="mt-2 text-xs text-[#cf222e]">{error}</p>}
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
     </div>
   );
 }
