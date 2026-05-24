@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
 
@@ -9,6 +10,7 @@ interface CampaignActionsProps {
   fixerStreamUrl: string;
   issuesUrl: string;
   pullsUrl: string;
+  className?: string;
 }
 
 export function CampaignActions({
@@ -17,6 +19,7 @@ export function CampaignActions({
   fixerStreamUrl,
   issuesUrl,
   pullsUrl,
+  className,
 }: CampaignActionsProps) {
   const [running, setRunning] = useState<null | "judge" | "fixer">(null);
   const [result, setResult] = useState<null | "judge" | "fixer">(null);
@@ -58,7 +61,7 @@ export function CampaignActions({
   }
 
   return (
-    <div className="mt-4 mb-2 p-4 rounded bg-muted">
+    <div className={cn("mt-4 p-4 rounded bg-muted", className)}>
       <p className="text-xs font-mono text-muted-foreground mb-3">
         Open Issues:{" "}
         <span className={`font-semibold ${openIssueCount > 0 ? "text-foreground" : "text-muted-foreground"}`}>

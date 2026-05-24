@@ -10,6 +10,7 @@ import { Check, ChevronLeft, ChevronRight, CircleSlash, Clock, SkipForward } fro
 import type { ResolvedItem } from "../types.ts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
 
 function itemOrder(item: ResolvedItem): number {
   if (item.__typename === "open_issue") return 0;
@@ -66,10 +67,12 @@ export function CampaignItemsTable({
   items,
   selectedCampaign,
   targetRepo,
+  className,
 }: {
   items: ResolvedItem[];
   selectedCampaign: string | null;
   targetRepo: string;
+  className?: string;
 }) {
   const sorted = useMemo(
     () => [...items].sort((a, b) => itemOrder(a) - itemOrder(b)),
@@ -129,7 +132,7 @@ export function CampaignItemsTable({
   const rows = table.getRowModel().rows;
 
   return (
-    <div className="mt-6">
+    <div className={cn("mt-6", className)}>
       <h2 className="text-xs font-semibold font-mono text-foreground uppercase tracking-wide mb-3">
         Items
       </h2>

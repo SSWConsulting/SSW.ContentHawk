@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "../lib/utils";
 
 export interface CampaignStatus {
   name: string;
@@ -35,17 +36,19 @@ interface CampaignStatusPanelProps {
   statuses: CampaignStatus[];
   selectedCampaign?: string | null;
   onSelectCampaign?: (name: string) => void;
+  className?: string;
 }
 
 export function CampaignStatusPanel({
   statuses,
   selectedCampaign,
   onSelectCampaign,
+  className,
 }: CampaignStatusPanelProps) {
   if (statuses.length === 0) return null;
   const selectable = Boolean(onSelectCampaign);
   return (
-    <div className="mb-6 rounded p-4 bg-muted">
+    <div className={cn("mb-6 rounded p-4 bg-muted", className)}>
       <h2 className="text-xs font-semibold font-mono text-foreground uppercase tracking-wide mb-3">
         Campaigns
       </h2>

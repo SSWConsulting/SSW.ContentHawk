@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
@@ -9,7 +10,6 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { FormInput, FormTextarea } from "./components/form-controls";
 import { Card, CardContent } from "./components/ui/card";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
-import { CONTENTHAWK_WORKFLOW_FILE } from "./constants";
 import type { ResolvedCatalog } from "./types";
 
 type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
@@ -62,27 +62,19 @@ const FIELDS = [
 type FieldName = (typeof FIELDS)[number]["name"];
 
 interface PageShellProps {
-  targetRepo: string;
+  className?: string;
   children: React.ReactNode;
 }
 
-function PageShell({ targetRepo, children }: PageShellProps) {
+function PageShell({ className, children }: PageShellProps) {
   return (
-    <>    <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
-
-    <TooltipProvider>
-      
+    <>
+      <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
+      <TooltipProvider>
         
-        <div className="relative font-sans max-w-[540px] mx-auto py-16 text-foreground">
-          <Card>
-            <CardContent>
-              <p className="font-mono text-sm text-muted-foreground mb-4">{targetRepo}</p>
-              {children}
-            </CardContent>
-          </Card>
-        </div>
-      
-    </TooltipProvider>
+          {children}
+        
+      </TooltipProvider>
     </>
   );
 }
@@ -161,11 +153,10 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
   }
 
   return (
-    <PageShell targetRepo={targetRepo}>
-      <p className="text-sm text-muted-foreground mb-6">
-        Trigger the <span className="font-mono">{CONTENTHAWK_WORKFLOW_FILE}</span> workflow on this repository.
-      </p>
-
+    <PageShell>
+      <Card className="max-w-xl mx-auto my-16">
+        <CardContent>
+          <p className="font-mono text-sm pb-6 text-muted-foreground">{targetRepo}</p>
       {(status === "idle" || status === "error") && (
         <div className="bg-muted rounded-lg p-4">
           <form onSubmit={startRun} noValidate>
@@ -234,6 +225,8 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
           )}
         </div>
       )}
+        </CardContent>
+      </Card>
     </PageShell>
   );
 }
@@ -259,30 +252,38 @@ export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
   }, [token]);
 
   return (
-    <PageShell targetRepo={targetRepo}>
-      {campaignStatuses.length > 0
-        ? (
-          <CampaignStatusPanel
-            statuses={campaignStatuses}
-            selectedCampaign={selectedCampaign}
-            onSelectCampaign={setSelectedCampaign}
-          />
-        )
-        : <p className="text-sm text-muted-foreground">No campaign data available.</p>}
-      {selectedCampaign && (
-        <CampaignActions
-          openIssueCount={openIssueCounts[selectedCampaign] ?? 0}
-          judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
-          fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
-          issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
-          pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign)}`}
-        />
-      )}
-      <CampaignItemsTable
-        items={catalog[selectedCampaign ?? ""] ?? []}
-        selectedCampaign={selectedCampaign}
-        targetRepo={targetRepo}
-      />
+    <PageShell className="">
+      <Card className="max-w-7xl mx-auto my-16">
+        <CardContent className="grid grid-cols-2 gap-6">
+          <p className="font-mono text-sm text-muted-foreground col-span-2">{targetRepo}</p>
+          
+            {campaignStatuses.length > 0
+              ? (
+                <CampaignStatusPanel
+                  statuses={campaignStatuses}
+                  selectedCampaign={selectedCampaign}
+                  onSelectCampaign={setSelectedCampaign}
+                  className="col-span-1 mb-0"
+                />
+              )
+              : <p className="text-sm text-muted-foreground col-span-1">No campaign data available.</p>}
+            <CampaignActions
+              openIssueCount={openIssueCounts[selectedCampaign ?? ""] ?? 0}
+              judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
+              fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
+              issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign ?? "")}`}
+              pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign ?? "")}`}
+              className="col-span-1 mt-0"
+            />
+            <CampaignItemsTable
+              items={catalog[selectedCampaign ?? ""] ?? []}
+              selectedCampaign={selectedCampaign}
+              targetRepo={targetRepo}
+              className="col-span-2 mt-0"
+            />
+          
+        </CardContent>
+      </Card>
     </PageShell>
   );
 }
