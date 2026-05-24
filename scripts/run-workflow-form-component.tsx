@@ -216,7 +216,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
         </div>
       )}
       {status === "error" && (
-        <p className="text-destructive font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>
+        <p className="text-destructive flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>
       )}
 
       {log.length > 0 && (
