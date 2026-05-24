@@ -348,19 +348,7 @@ async function main() {
     res.end(clientBundle);
   });
 
-  app.get("/logo.png", async (_req, res) => {
-    const logo = await fs.readFile(path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "ssw-logo.png"));
-    res.setHeader("Cache-Control", "max-age=3600");
-    res.setHeader("Content-Type", "image/png");
-    res.end(logo);
-  });
-
-  app.get("/polygon-bg.svg", async (_req, res) => {
-    const svg = await fs.readFile(path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "polygon-bg.svg"));
-    res.setHeader("Cache-Control", "max-age=3600");
-    res.setHeader("Content-Type", "image/svg+xml");
-    res.end(svg);
-  });
+  app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), "images"), { maxAge: "1h" }));
 
   app.get("/run-workflow-stream", async (req, res) => {
     res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
