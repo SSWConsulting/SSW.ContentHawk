@@ -11,13 +11,14 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
-import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import fs from "node:fs/promises";
+import express from "express";
+import type { Request, Response } from "express";
 import { renderForm } from "./run-workflow-form.tsx";
 import { CONTENTHAWK_WORKFLOW_FILE, CONTENT_JUDGE_WORKFLOW_FILE, CONTENT_FIXER_WORKFLOW_FILE } from "./constants.ts";
 import type { ContentCatalog, ResolvedCatalog, ResolvedItem } from "./types.ts";
@@ -300,202 +301,158 @@ async function main() {
   ]);
   const token = crypto.randomBytes(24).toString("base64url");
 
-  const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url!, `http://${req.headers.host}`);
+  type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
+  const sseLog = (res: Response, event: LogEvent) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+  const sseText = (res: Response, message: string) => sseLog(res, { type: "log", message });
+  const sseLine = (res: Response, line: string) =>
+    /^https?:\/\//.test(line)
+      ? sseLog(res, { type: "link", message: line, url: line })
+      : sseText(res, line);
 
-    if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-      return res.end(renderForm(targetRepo, token, css, form));
+  function requireToken(req: Request, res: Response): boolean {
+    if (req.query["token"] !== token) {
+      res.sendStatus(401);
+      return false;
     }
+    return true;
+  }
 
-    if (req.method === "GET" && url.pathname === "/campaign-statuses") {
-      const statuses = contentCatalog ? computeCampaignStatuses(contentCatalog) : [];
-      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify(statuses));
-    }
+  const app = express();
 
-    if (req.method === "GET" && url.pathname === "/campaign-items") {
-      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify(resolvedCatalog));
-    }
-
-    if (req.method === "GET" && url.pathname === "/open-issue-counts") {
-      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify(openIssueCounts));
-    }
-
-    if (req.method === "POST" && url.pathname === "/kill") {
-      process.exit(0);
-    }
-
-    if (req.method === "GET" && url.pathname === "/bundle.js") {
-      res.writeHead(200, { "Content-Type": "application/javascript", "Cache-Control": "no-store" });
-      return res.end(clientBundle);
-    }
-
-    if (req.method === "GET" && url.pathname === "/logo.png") {
-      const logoPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "ssw-logo.png");
-      const logo = await fs.readFile(logoPath);
-      res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "max-age=3600" });
-      return res.end(logo);
-    }
-
-    if (req.method === "GET" && url.pathname === "/polygon-bg.svg") {
-      const logoPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "polygon-bg.svg");
-      const logo = await fs.readFile(logoPath);
-      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "max-age=3600" });
-      return res.end(logo);
-    }
-
-
-    if (req.method === "GET" && url.pathname === "/run-workflow-stream") {
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      });
-      res.flushHeaders();
-
-      type LogEvent =
-        | { type: "log"; message: string }
-        | { type: "link"; message: string; url: string };
-      const send = (event: LogEvent) => res.write(`data: ${JSON.stringify(event)}\n\n`);
-      const log = (message: string) => send({ type: "log", message });
-      const sendLine = (line: string) =>
-        /^https?:\/\//.test(line)
-          ? send({ type: "link", message: line, url: line })
-          : log(line);
-
-      const workflowFields = [
-        "intent",
-        "search_scope",
-        "label_name",
-        "processing_priority",
-        "issue_preferences",
-        "pr_preferences",
-      ] as const;
-      type WorkflowFieldName = (typeof workflowFields)[number];
-
-      const requestFields: Partial<Record<WorkflowFieldName, string>> = {};
-      for (const key of workflowFields) {
-        const val = url.searchParams.get(key);
-        if (val) requestFields[key] = val;
-      }
-      const missingFields = workflowFields.filter((f) => !requestFields[f]);
-      if (missingFields.length) {
-        res.write(
-          `event: failed\ndata: ${JSON.stringify(`Missing required fields: ${missingFields.join(", ")}`)}\n\n`,
-        );
-        res.end();
-        return;
-      }
-
-      try {
-        const beforeMs = Date.now();
-        await triggerWorkflow(targetRepo, requestFields as Record<WorkflowFieldName, string>, sendLine);
-        const runId = await waitForRunId(targetRepo, beforeMs, log);
-        await watchRun(runId, targetRepo, sendLine);
-        res.write(`event: done\ndata: ${JSON.stringify({ runId })}\n\n`);
-      } catch (err) {
-        res.write(
-          `event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`,
-        );
-      } finally {
-        res.end();
-      }
-      return;
-    }
-
-    if (req.method === "GET" && (url.pathname === "/run-judge" || url.pathname === "/run-fixer")) {
-      if (url.searchParams.get("token") !== token) {
-        res.statusCode = 401;
-        return res.end();
-      }
-      const workflowFile =
-        url.pathname === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
-
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      });
-      res.flushHeaders();
-
-      type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
-      const send = (event: LogEvent) => res.write(`data: ${JSON.stringify(event)}\n\n`);
-      const log = (message: string) => send({ type: "log", message });
-      const sendLine = (line: string) =>
-        /^https?:\/\//.test(line)
-          ? send({ type: "link", message: line, url: line })
-          : log(line);
-
-      try {
-        const beforeMs = Date.now();
-        await triggerWorkflow(targetRepo, {}, sendLine, workflowFile);
-        const runId = await waitForRunId(targetRepo, beforeMs, log, workflowFile);
-        await watchRun(runId, targetRepo, sendLine);
-        res.write("event: done\ndata: {}\n\n");
-      } catch (err) {
-        res.write(
-          `event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`,
-        );
-      } finally {
-        res.end();
-      }
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/github/pr-for-run") {
-      if (url.searchParams.get("token") !== token) {
-        res.statusCode = 401;
-        return res.end();
-      }
-      const runId = url.searchParams.get("run_id");
-      if (!runId || !githubToken) {
-        res.statusCode = 400;
-        return res.end();
-      }
-      const [owner, repo] = targetRepo.split("/");
-      const searchRes = await fetch(
-        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"id: ${runId}"+in:body`,
-        { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
-      );
-      if (!searchRes.ok) {
-        res.statusCode = 502;
-        return res.end();
-      }
-      const data = await searchRes.json() as { items: Array<{ html_url: string; number: number; title: string }> };
-      const pr = data.items[0] ?? null;
-      res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify({ url: pr?.html_url ?? null, number: pr?.number ?? null, title: pr?.title ?? null }));
-    }
-
-    if (req.method === "GET" && url.pathname === "/github/issues") {
-      if (url.searchParams.get("token") !== token) {
-        res.statusCode = 401;
-        return res.end();
-      }
-      const owner = url.searchParams.get("owner");
-      const repo = url.searchParams.get("repo");
-      const issueNumber = url.searchParams.get("issue_number");
-      if (!owner || !repo || !issueNumber || !githubToken) {
-        res.statusCode = 400;
-        return res.end();
-      }
-      const ghRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
-        { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
-      );
-      const data = await ghRes.json() as { state: string; state_reason?: string | null };
-      res.writeHead(ghRes.status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
-      return res.end(JSON.stringify({ state: data.state, state_reason: data.state_reason ?? null }));
-    }
-
-    res.statusCode = 404;
-    res.end();
+  app.get("/", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.end(renderForm(targetRepo, token, css, form));
   });
 
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  app.get("/campaign-statuses", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(contentCatalog ? computeCampaignStatuses(contentCatalog) : []);
+  });
+
+  app.get("/campaign-items", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(resolvedCatalog);
+  });
+
+  app.get("/open-issue-counts", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(openIssueCounts);
+  });
+
+  app.post("/kill", () => process.exit(0));
+
+  app.get("/bundle.js", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Type", "application/javascript");
+    res.end(clientBundle);
+  });
+
+  app.get("/logo.png", async (_req, res) => {
+    const logo = await fs.readFile(path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "ssw-logo.png"));
+    res.setHeader("Cache-Control", "max-age=3600");
+    res.setHeader("Content-Type", "image/png");
+    res.end(logo);
+  });
+
+  app.get("/polygon-bg.svg", async (_req, res) => {
+    const svg = await fs.readFile(path.join(path.dirname(fileURLToPath(import.meta.url)), "images", "polygon-bg.svg"));
+    res.setHeader("Cache-Control", "max-age=3600");
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.end(svg);
+  });
+
+  app.get("/run-workflow-stream", async (req, res) => {
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
+    res.flushHeaders();
+
+    const workflowFields = [
+      "intent", "search_scope", "label_name",
+      "processing_priority", "issue_preferences", "pr_preferences",
+    ] as const;
+    type WorkflowFieldName = (typeof workflowFields)[number];
+
+    const requestFields: Partial<Record<WorkflowFieldName, string>> = {};
+    for (const key of workflowFields) {
+      const val = req.query[key];
+      if (typeof val === "string") requestFields[key] = val;
+    }
+    const missingFields = workflowFields.filter((f) => !requestFields[f]);
+    if (missingFields.length) {
+      res.write(`event: failed\ndata: ${JSON.stringify(`Missing required fields: ${missingFields.join(", ")}`)}\n\n`);
+      res.end();
+      return;
+    }
+
+    try {
+      const beforeMs = Date.now();
+      await triggerWorkflow(targetRepo, requestFields as Record<WorkflowFieldName, string>, (l) => sseLine(res, l));
+      const runId = await waitForRunId(targetRepo, beforeMs, (l) => sseText(res, l));
+      await watchRun(runId, targetRepo, (l) => sseLine(res, l));
+      res.write(`event: done\ndata: ${JSON.stringify({ runId })}\n\n`);
+    } catch (err) {
+      res.write(`event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`);
+    } finally {
+      res.end();
+    }
+  });
+
+  app.get(["/run-judge", "/run-fixer"], async (req, res) => {
+    if (!requireToken(req, res)) return;
+
+    const workflowFile = req.path === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
+    res.flushHeaders();
+
+    try {
+      const beforeMs = Date.now();
+      await triggerWorkflow(targetRepo, {}, (l) => sseLine(res, l), workflowFile);
+      const runId = await waitForRunId(targetRepo, beforeMs, (l) => sseText(res, l), workflowFile);
+      await watchRun(runId, targetRepo, (l) => sseLine(res, l));
+      res.write("event: done\ndata: {}\n\n");
+    } catch (err) {
+      res.write(`event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`);
+    } finally {
+      res.end();
+    }
+  });
+
+  app.get("/github/pr-for-run", async (req, res) => {
+    if (!requireToken(req, res)) return;
+    const runId = req.query["run_id"];
+    if (typeof runId !== "string" || !githubToken) { res.sendStatus(400); return; }
+
+    const [owner, repo] = targetRepo.split("/");
+    const searchRes = await fetch(
+      `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"id: ${runId}"+in:body`,
+      { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+    );
+    if (!searchRes.ok) { res.sendStatus(502); return; }
+
+    const data = await searchRes.json() as { items: Array<{ html_url: string; number: number; title: string }> };
+    const pr = data.items[0] ?? null;
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ url: pr?.html_url ?? null, number: pr?.number ?? null, title: pr?.title ?? null });
+  });
+
+  app.get("/github/issues", async (req, res) => {
+    if (!requireToken(req, res)) return;
+    const { owner, repo, issue_number } = req.query;
+    if (typeof owner !== "string" || typeof repo !== "string" || typeof issue_number !== "string" || !githubToken) {
+      res.sendStatus(400); return;
+    }
+
+    const ghRes = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}`,
+      { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+    );
+    const data = await ghRes.json() as { state: string; state_reason?: string | null };
+    res.status(ghRes.status).setHeader("Cache-Control", "no-store");
+    res.json({ state: data.state, state_reason: data.state_reason ?? null });
+  });
+
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((r) => server.once("listening", r));
   const addr = server.address();
   if (typeof addr === "string" || !addr) die("Failed to bind server");
   const serverUrl = `http://127.0.0.1:${addr.port}/?token=${encodeURIComponent(token)}`;
