@@ -250,7 +250,10 @@ export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
   const [openIssueCounts, setOpenIssueCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    fetchCampaignStatuses(token).then(setCampaignStatuses);
+    fetchCampaignStatuses(token).then((statuses) => {
+      setCampaignStatuses(statuses);
+      if (statuses.length > 0) setSelectedCampaign(statuses[0].name);
+    });
     fetchCampaignItems(token).then(setCatalog);
     fetchOpenIssueCounts(token).then(setOpenIssueCounts);
   }, [token]);

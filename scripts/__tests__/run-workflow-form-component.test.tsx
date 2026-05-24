@@ -192,15 +192,14 @@ describe("CampaignsPage", () => {
     });
   });
 
-  it("prompts the user to select a campaign before any selection is made", async () => {
+  it("auto-selects the first campaign on load", async () => {
     vi.mocked(contenthawkService.fetchCampaignStatuses).mockResolvedValue([
-      { name: "my-campaign", percent: 10 },
+      { name: "first-campaign", percent: 10 },
+      { name: "second-campaign", percent: 50 },
     ]);
 
     render(<CampaignsPage {...props} />);
-    await waitFor(() => screen.getByText("my-campaign"));
-
-    expect(screen.getByText(/Select a campaign above to view its items/i)).toBeInTheDocument();
+    await waitFor(() => screen.getByText("first-campaign"));
   });
 
   it("shows the items table after selecting a campaign", async () => {
