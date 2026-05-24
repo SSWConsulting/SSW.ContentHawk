@@ -278,6 +278,7 @@ export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
       <CampaignItemsTable
         items={catalog[selectedCampaign ?? ""] ?? []}
         selectedCampaign={selectedCampaign}
+        targetRepo={targetRepo}
       />
     </PageShell>
   );

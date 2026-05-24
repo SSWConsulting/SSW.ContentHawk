@@ -18,23 +18,29 @@ function itemOrder(item: ResolvedItem): number {
   return 3;
 }
 
-function StatusCell({ item }: { item: ResolvedItem }) {
+function StatusCell({ item, targetRepo }: { item: ResolvedItem; targetRepo: string }) {
+  const issueUrl = (n: number) => `https://github.com/${targetRepo}/issues/${n}`;
+
   switch (item.__typename) {
     case "open_issue":
-      return <span className="font-mono text-xs text-primary">#{item.issueNumber}</span>;
+      return (
+        <a href={issueUrl(item.issueNumber)} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-primary underline">
+          #{item.issueNumber}
+        </a>
+      );
 
     case "closed_issue":
       if (item.stateReason === "not_planned") {
         return (
-          <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+          <a href={issueUrl(item.issueNumber)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-mono text-xs text-muted-foreground underline">
             <CircleSlash size={12} />#{item.issueNumber}
-          </span>
+          </a>
         );
       }
       return (
-        <span className="flex items-center gap-1 font-mono text-xs text-green-500">
+        <a href={issueUrl(item.issueNumber)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-mono text-xs text-green-500 underline">
           <Check size={12} />#{item.issueNumber}
-        </span>
+        </a>
       );
 
     case "skipped":
@@ -59,9 +65,11 @@ const columnHelper = createColumnHelper<ResolvedItem>();
 export function CampaignItemsTable({
   items,
   selectedCampaign,
+  targetRepo,
 }: {
   items: ResolvedItem[];
   selectedCampaign: string | null;
+  targetRepo: string;
 }) {
   const sorted = useMemo(
     () => [...items].sort((a, b) => itemOrder(a) - itemOrder(b)),
@@ -73,25 +81,34 @@ export function CampaignItemsTable({
       columnHelper.display({
         id: "status",
         header: "Status",
-        cell: ({ row }) => <StatusCell item={row.original} />,
+        cell: ({ row }) => <StatusCell item={row.original} targetRepo={targetRepo} />,
       }),
       columnHelper.accessor("path", {
-        header: "Rule",
-        cell: (info) => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="font-mono text-xs text-foreground truncate block max-w-45 cursor-default">
-                {info.getValue()}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="start" className="font-mono text-nowrap max-w-max">
-              {info.getValue()}
-            </TooltipContent>
-          </Tooltip>
-        ),
+        header: "File",
+        cell: (info) => {
+          const path = info.getValue();
+          const fileUrl = `https://github.com/${targetRepo}/blob/main/${path}`;
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-foreground underline truncate block max-w-45"
+                >
+                  {path}
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="start" className="font-mono text-nowrap max-w-max">
+                {path}
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
       }),
     ],
-    [],
+    [targetRepo],
   );
 
   const table = useReactTable({
