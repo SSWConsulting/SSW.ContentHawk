@@ -6,19 +6,36 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ---
 
+## 🎥 Video overview
+
+[![ContentHawk overview video](https://img.youtube.com/vi/XkRd0JcMyxM/0.jpg)](https://youtu.be/XkRd0JcMyxM)
+**Video: Content Hawk - The wingman for updating your Markdown sites (8 min)**
+
 ## Installing ContentHawk
 
 ### Option 1: Use the installer skill (recommended)
 
-1. The ContentHawk installer can be downloaded using [npx skills](https://github.com/vercel-labs/skills). Run the command below to get the installer:
+
+1. The ContentHawk installer can be downloaded and used as a skill. The instructions below show you how to install the skill from different marketplaces:
+
+**Using NPX Skills**
 
 ```bash
 npx skills add -g SSWConsulting/SSW.ContentHawk
+
+# Altenatively, you can install the skill directly for your your agent of choice like. The Example below shows you how to install the skill for claude.
+npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
 ```
-> Altenatively, you can install the skill directly for your your agent of choice like. The Example below showes you how to install the skill for claude.
-> ```bash
-> npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
-> ```
+
+**From the Claude Plugin Marketplace**
+
+The installer skill can also be downloaded as a plugin from the Claude Plugin Marketplace. Use the commands below to add the `ssw-consulting` Claude plugin marketplace and install the `ssw-contenthawk` plugin.
+
+```bash
+/plugin marketplace add SSWConsulting/SSW.ContentHawk
+/plugin install ssw-contenthawk@ssw-consulting
+```
+
 
 
 2. Once you've added the installation skill, you can run it with the command below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
@@ -30,7 +47,6 @@ npx skills add -g SSWConsulting/SSW.ContentHawk
 3. Follow along with the installer instructions to complete the setup. The installer will copy the required workflows and configuration files to your repository and set up secrets.
 
 ---
-
 
 ### Option 2: Manual installation
 
@@ -74,7 +90,6 @@ Add a **repository secret** named:
 | Secret name           | Description |
 |-----------------------|-------------|
 | `COPILOT_GITHUB_TOKEN` | Read-only fine-grained token with Copilot Requests; public repo access is fine. |
-| `CONTENTHAWK_GITHUB_PAT`      | Personal access token with Actions (read/write), Contents (read), Issues (read/write), Metadata (read). |
 | `TAVILY_API_KEY`       | Tavily API Key |
 
 After completing these steps, the ContentHawk workflows in the copied `.github` folder can run in your repository.
@@ -136,7 +151,7 @@ Run this after the judge has created issues and you have merged the judge PR. Yo
 
 ### Install Script
 
-The installer is published to npm as `ssw.contenthawk` and run via `npx ssw.contenthawk@latest <owner/repo>`. The Claude/AI **skill** (`ssw.contenthawk/skills/contenthawk-install`) is a thin wrapper that instructs the agent to invoke that `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out. The installer itself is no longer bundled inside the skill.
+The installer is published to npm as `ssw-contenthawk` and run via `npx ssw-contenthawk@latest <owner/repo>`. The Claude/AI **skill** (`ssw-contenthawk/skills/contenthawk-install`) is a thin wrapper that instructs the agent to invoke that `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out. The installer itself is no longer bundled inside the skill.
 
 To cut a new release:
 
@@ -144,8 +159,8 @@ To cut a new release:
 2. Authenticate with npm if you haven't already by running `npm login`. Use SSW's NPM account in Keeper.
 3. Get your code changes reviewed and merged to `main`.
 4. Run `npm run build` to produce the bundled `dist/install.js` (and `dist/form.css`).
-5. Run `npm publish` to push to npm. From then on `npx ssw.contenthawk@latest <owner/repo>` resolves to the new version.
+5. Run `npm publish` to push to npm. From then on `npx ssw-contenthawk@latest <owner/repo>` resolves to the new version.
 
 ### Skill
 
-The skills in `ssw.contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw.contenthawk`.
+The skills in `ssw-contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw-contenthawk`.

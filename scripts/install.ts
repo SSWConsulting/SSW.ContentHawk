@@ -211,14 +211,15 @@ function setSecret(
 }
 
 function openBrowser(url: string): void {
-  const cmd =
-    process.platform === "darwin"
-      ? "open"
-      : process.platform === "win32"
-        ? "start"
-        : "xdg-open";
   try {
-    spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
+    if (process.platform === "darwin") {
+      spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
+    } else if (process.platform === "win32") {
+      spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" }).unref();
+    } 
+    else {
+        spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+    }
   } catch {
     // best-effort — user can open the URL manually
   }
