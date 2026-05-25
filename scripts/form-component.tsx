@@ -125,6 +125,8 @@ export function FormContent({ targetRepo, token }: FormProps) {
   }
 
   return (
+    <>
+    <div className="absolute inset-0 bg-cover -z-1 bg-[url('/polygon-bg.svg')] mix-blend-color-burn opacity-35" aria-hidden="true" />
     <Card className="relative max-w-[540px] mx-auto my-16">
       <CardContent>
         {loadingSecrets && (
@@ -315,5 +317,6 @@ export function FormContent({ targetRepo, token }: FormProps) {
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
