@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { LoaderCircle, Lock, LockOpen, Check, X, AlertTriangle, ChevronRight } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
+import { Input } from "./components/ui/input";
 import { cn } from "./lib/utils";
 import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createWorkflowStream } from "./services/github-service";
 import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
@@ -222,7 +223,7 @@ export function FormContent({ targetRepo }: FormProps) {
                       </span>
                     )}
                     <div className="relative">
-                      <input
+                      <Input
                         key={`${name}-${unlockedFields.has(name) ? "unlocked" : "locked"}`}
                         type="password"
                         name={name}
@@ -230,7 +231,7 @@ export function FormContent({ targetRepo }: FormProps) {
                         disabled={s === "ok" && !unlockedFields.has(name)}
                         readOnly={s === "ok" && !unlockedFields.has(name)}
                         value={s === "ok" && !unlockedFields.has(name) ? "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" : undefined}
-                        className="w-full py-[0.55rem] px-[0.65rem] pr-9 font-mono border border-border rounded box-border text-[0.95rem] bg-background text-foreground disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                        className="pr-9 font-mono"
                       />
                       {s === "ok" && (
                         <button
