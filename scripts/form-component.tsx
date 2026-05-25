@@ -8,6 +8,7 @@ import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
 import { SseLog, type LogEvent } from "./components/sse-log";
 import { OutboundLink } from "./components/outbound-link";
 import { Spinner } from "./components/spinner";
+import { Message } from "./message";
 
 export const SECRETS = ["TAVILY_API_KEY", "COPILOT_GITHUB_TOKEN"] as const;
 
@@ -184,7 +185,10 @@ export function FormContent({ targetRepo }: FormProps) {
 
         {activeTab === "secrets" && (
           <>
-            <Banner variant={banner?.variant}>{banner?.msg}</Banner>
+            {banner?.variant === "success"
+              ? <Message variant="success">{banner.msg}</Message>
+              : <Banner variant={banner?.variant}>{banner?.msg}</Banner>
+            }
             <form onSubmit={handleSubmit}>
               {SECRETS.map((name) => {
                 const s = statuses[name];
@@ -283,7 +287,7 @@ export function FormContent({ targetRepo }: FormProps) {
               <p className="text-sm text-muted-foreground">Checking installation status…</p>
             ) : branchStatus === "exists" && workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
               <>
-                <Banner variant="info">An installation branch already exists: {CONTENTHAWK_INSTALL_BRANCH}.</Banner>
+                <Message variant="info">An installation branch already exists: {CONTENTHAWK_INSTALL_BRANCH}.</Message>
                 <Button variant="default" type="button" onClick={() => startWorkflow(true)}>Restart Installation</Button>
               </>
             ) : workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
@@ -304,9 +308,9 @@ export function FormContent({ targetRepo }: FormProps) {
             
             {workflowStatus === "no-changes" && (
               <div className="mt-4">
-                <Banner variant="info">
+                <Message variant="info">
                   No changes to commit — ContentHawk workflows already match what&apos;s on your default branch.
-                </Banner>
+                </Message>
               </div>
             )}
             {workflowStatus === "error" && (
