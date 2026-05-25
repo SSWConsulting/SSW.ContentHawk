@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { LoaderCircle, Lock, LockOpen, Check, X, AlertTriangle } from "lucide-react";
+import { LoaderCircle, Lock, LockOpen, Check, X, AlertTriangle, ChevronRight } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
 import { cn } from "./lib/utils";
@@ -175,7 +175,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
               Make sure your current terminal directory is where you want the clone to live before continuing.
             </p>
             <Button type="button" onClick={() => setActiveTab("secrets")}>
-              Get Started →
+              Get Started <ChevronRight  />
             </Button>
           </div>
         )}
@@ -261,7 +261,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
                 </Button>
                 {(submissionState === "submitted" || SECRETS.every(n => statuses[n] === "ok" && !unlockedFields.has(n))) && (
                   <Button variant="secondary" type="button" onClick={() => setActiveTab("workflows")}>
-                    Next: Set up Workflows →
+                    Next: Set up Workflows <ChevronRight />
                   </Button>
                 )}
               </div>
