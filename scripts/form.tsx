@@ -16,13 +16,15 @@ export function renderForm(targetRepo: string, token: string, css: string): stri
 <style>${css}</style>
 </head>
 <body class="bg-ssw-gray-dark dark relative max-h-screen overflow-hidden">
-<div id="app" class="h-screen overflow-y-auto">
-  <div class="flex items-center max-w-7xl mx-auto pt-6 gap-3 px-4">
-    <img src="/ssw-logo.png" alt="SSW" class="h-13 w-auto" />
-    <span class="text-4xl tracking-wide"><span class="text-primary font-semibold">Content</span><span class="text-white font-light">Hawk</span></span>
+  <div class="h-screen overflow-y-auto">
+    <div class="flex items-center max-w-7xl mx-auto pt-6 gap-3">
+      <img src="/ssw-logo.png" alt="SSW" class="h-13 w-auto" />
+      <span class="text-4xl tracking-wide"><span class="text-primary font-semibold">Content</span><span class="text-white font-light">Hawk</span></span>
+    </div>
+    <div id="app">
+      ${inner}
+    </div>
   </div>
-  ${inner}
-</div>
 <script id="__PROPS__" type="application/json">${props}</script>
 <script src="${bundleSrc}"></script>
 </body>
