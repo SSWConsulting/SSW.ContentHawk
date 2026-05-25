@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
 import { SseLog, type LogEvent } from "./sse-log";
+import { Spinner } from "./spinner";
+import { OutboundLink } from "./outbound-link";
 
 interface CampaignActionsProps {
   openIssueCount: number;
@@ -74,7 +76,7 @@ export function CampaignActions({
           onClick={() => runStream("judge", judgeStreamUrl)}
           disabled={running !== null}
         >
-          {running === "judge" ? "Running..." : "Generate Issues"}
+          {running === "judge" ? <>Running <Spinner /> </> : "Generate Issues"}
         </Button>
         <Button
           type="button"
@@ -82,27 +84,23 @@ export function CampaignActions({
           onClick={() => runStream("fixer", fixerStreamUrl)}
           disabled={running !== null || openIssueCount === 0}
         >
-          {running === "fixer" ? "Running..." : "Fix Issues"}
+          {running === "fixer" ? <>Running <Spinner /> </> : "Fix Issues"}
         </Button>
       </div>
 
       <SseLog entries={log} className="mt-3" />
 
       {result === "judge" && (
-        <p className="mt-3 text-sm">
-          <a href={issuesUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-            View open issues
-          </a>
+        <p className="mt-3">
+          <OutboundLink href={issuesUrl}>View open issues</OutboundLink>
         </p>
       )}
       {result === "fixer" && (
-        <p className="mt-3 text-sm">
-          <a href={pullsUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-            View open PRs \u2192
-          </a>
+        <p className="mt-3">
+          <OutboundLink href={pullsUrl}>View open PRs</OutboundLink>
         </p>
       )}
-      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      {error && <p className="mt-2 text-xs text-primary">{error}</p>}
     </div>
   );
 }
