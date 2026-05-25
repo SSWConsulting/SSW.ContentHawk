@@ -1,7 +1,8 @@
 import React from "react";
 import { hydrateRoot } from "react-dom/client";
 import { InstallPage } from "./pages/install.tsx";
-import { NewCampaignPage, CampaignsPage } from "./run-workflow-form-component.tsx";
+import { NewCampaignPage } from "./pages/new-campaign.tsx";
+import { CampaignsPage } from "./pages/campaigns.tsx";
 
 const PAGES = {
   install: InstallPage,

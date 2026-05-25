@@ -2,7 +2,8 @@ import React, { act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { NewCampaignPage, CampaignsPage } from "../run-workflow-form-component";
+import { NewCampaignPage } from "../pages/new-campaign";
+import { CampaignsPage } from "../pages/campaigns";
 import * as contenthawkService from "../services/contenthawk-service";
 
 vi.mock("../services/contenthawk-service");
