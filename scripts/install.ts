@@ -363,7 +363,7 @@ export async function main(argv = process.argv.slice(2)) {
   const ghTokenResult = spawnSync("gh", ["auth", "token"], { encoding: "utf-8" });
   const githubToken = ghTokenResult.status === 0 ? ghTokenResult.stdout.trim() : "";
 
-  const clientEntry = mode === "install" ? "form-client.tsx" : "run-workflow-client.tsx";
+  const clientEntry = "form-client.tsx";
 
   const [{ resolved: resolvedCatalog, openIssueCounts }, clientBundle, css] = await Promise.all([
     mode === "campaigns" && contentCatalog

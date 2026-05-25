@@ -13,7 +13,7 @@ export function renderForm(targetRepo: string, css: string, page: Page = "instal
 
   if (page === "install") {
     inner = renderToString(<FormContent targetRepo={targetRepo} />);
-    props = JSON.stringify({ targetRepo });
+    props = JSON.stringify({ page, targetRepo });
   } else if (page === "campaigns") {
     inner = renderToString(<CampaignsPage targetRepo={targetRepo} />);
     props = JSON.stringify({ page, targetRepo });
