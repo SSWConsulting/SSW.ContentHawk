@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { LoaderCircle, Lock, LockOpen } from "lucide-react";
+import { LoaderCircle, Lock, LockOpen, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
 import { cn } from "./lib/utils";
@@ -186,8 +186,13 @@ export function FormContent({ targetRepo, token }: FormProps) {
             <form onSubmit={handleSubmit}>
               {SECRETS.map((name) => {
                 const s = statuses[name];
-                const statusText = s === "ok" ? "\u2713 Set" : s === "skipped" ? "\u26a0 Skipped (empty)" : s && typeof s === "object" ? `\u2717 ${s.error}` : "";
-                const statusClass = s === "ok" ? "text-green-500" : s === "skipped" ? "text-yellow-500" : s && typeof s === "object" ? "text-destructive" : "";
+                const statusNode = s === "ok"
+                  ? <span className="flex items-center gap-1 text-xs mt-1 text-muted-foreground"><Check className="size-3 text-green-500 shrink-0" /> Set</span>
+                  : s === "skipped"
+                  ? <span className="flex items-center gap-1 text-xs mt-1 text-muted-foreground"><AlertTriangle className="size-3 text-yellow-500 shrink-0" /> Skipped (empty)</span>
+                  : s && typeof s === "object"
+                  ? <span className="flex items-center gap-1 text-xs mt-1 text-muted-foreground"><X className="size-3 text-destructive shrink-0" /> {s.error}</span>
+                  : null;
                 return (
                   <label key={name} className="block my-5">
                     <span className="block font-semibold mb-1.5 font-mono text-[0.9rem]">{name}</span>
@@ -243,7 +248,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
                         </button>
                       )}
                     </div>
-                    {statusText && <span className={cn("block text-xs mt-1", statusClass)}>{statusText}</span>}
+                    {statusNode}
                   </label>
                 );
               })}
@@ -290,7 +295,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
             )}
             {workflowStatus === "done" && (
               <div className="mt-2 flex flex-col gap-2">
-                <p className="text-sm font-semibold text-green-500">✓ Pull request created successfully.</p>
+                <p className="text-sm font-semibold text-foreground flex items-center gap-1"><Check className="size-4 text-green-500 shrink-0" /> Pull request created successfully.</p>
                 {prUrl && <OutboundLink href={prUrl}>View generated PR</OutboundLink>}
               </div>
             )}
@@ -303,7 +308,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
               </div>
             )}
             {workflowStatus === "error" && (
-              <p className="text-primary mt-2 text-sm font-semibold">✗ Setup failed. See log above.</p>
+              <p className="text-foreground mt-2 text-sm font-semibold flex items-center gap-1"><X className="size-4 text-destructive shrink-0" /> Setup failed. See log above.</p>
             )}
           </div>
         )}

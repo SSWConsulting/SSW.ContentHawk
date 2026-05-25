@@ -45,7 +45,7 @@ describe("GitHub Secrets tab", () => {
 
     // ACT
     const { container } = await renderAndOpenSecrets();
-    await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByText("Set")).toHaveLength(1));
 
     // ASSERT
     const input = container.querySelector<HTMLInputElement>(`input[name="${SECRETS[0]}"]`);
@@ -64,7 +64,7 @@ describe("GitHub Secrets tab", () => {
 
     // ASSERT
     await waitFor(() => {
-      expect(screen.getAllByText("✓ Set")).toHaveLength(SECRETS.length);
+      expect(screen.getAllByText("Set")).toHaveLength(SECRETS.length);
       expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument();
     });
   });
@@ -94,7 +94,7 @@ describe("GitHub Secrets tab", () => {
     );
 
     const { container } = await renderAndOpenSecrets();
-    await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByText("Set")).toHaveLength(1));
 
     const tavilyInput = container.querySelector<HTMLInputElement>(`input[name="TAVILY_API_KEY"]`);
     await userEvent.type(tavilyInput!, "my-tavily-key");
@@ -157,7 +157,7 @@ describe("GitHub Secrets tab", () => {
 
     // ASSERT
     await waitFor(() => {
-      expect(screen.getByText(`✓ Pull request created successfully.`)).toBeInTheDocument();
+      expect(screen.getByText("Pull request created successfully.")).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /View generated PR/i })).toHaveAttribute("href", "https://github.com/owner/repo/pull/1");
     });
   });
@@ -202,7 +202,7 @@ describe("GitHub Secrets tab", () => {
     const { container } = await renderAndOpenSecrets();
 
     await waitFor(() => {
-      expect(screen.getAllByText("✓ Set")).toHaveLength(SECRETS.length);
+      expect(screen.getAllByText("Set")).toHaveLength(SECRETS.length);
       expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
     });
 
