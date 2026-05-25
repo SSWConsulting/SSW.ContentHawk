@@ -156,7 +156,8 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
     <PageShell>
       <Card className="max-w-xl mx-auto my-16">
         <CardContent>
-          <p className="font-mono text-sm pb-6 text-muted-foreground">{targetRepo}</p>
+          <h1 className="text-xl mb-0 text-foreground">New Campaign</h1>
+          <p className="text-muted-foreground font-mono mt-1 pb-6 text-sm">{targetRepo}</p>
       {(status === "idle" || status === "error") && (
         <div className="bg-muted rounded-lg p-4">
           <form onSubmit={startRun} noValidate>
@@ -255,7 +256,10 @@ export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
     <PageShell className="">
       <Card className="max-w-7xl mx-auto my-16">
         <CardContent className="grid grid-cols-2 gap-6">
-          <p className="font-mono text-sm text-muted-foreground col-span-2">{targetRepo}</p>
+          <div className="col-span-2">
+            <h1 className="text-xl mb-0 text-foreground">Campaigns</h1>
+            <p className="text-muted-foreground font-mono mt-1 text-sm col-span-2">{targetRepo}</p>
+          </div>
           
             {campaignStatuses.length > 0
               ? (
