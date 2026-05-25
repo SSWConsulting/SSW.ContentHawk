@@ -105,7 +105,7 @@ describe("GitHub Secrets tab", () => {
     // ASSERT
     await waitFor(() => expect(service.submitSecrets).toHaveBeenCalled());
 
-    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][1];
+    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][0];
     expect(submittedData.get("COPILOT_GITHUB_TOKEN")).toBeNull();
     expect(submittedData.get("TAVILY_API_KEY")).toBe("my-tavily-key");
   });
@@ -220,7 +220,7 @@ describe("GitHub Secrets tab", () => {
     // ASSERT
     await waitFor(() => expect(service.submitSecrets).toHaveBeenCalled());
 
-    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][1];
+    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][0];
     expect(submittedData.get(SECRETS[0])).toBe("new-secret-value");
     expect(submittedData.get(SECRETS[1])).toBeNull();
   });

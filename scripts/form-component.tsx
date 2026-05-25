@@ -15,7 +15,6 @@ export type SecretResult = "ok" | "skipped" | { error: string };
 
 export interface FormProps {
   targetRepo: string;
-  token: string;
 }
 
 type BannerVariant = "success" | "warning" | "error" | "info";
@@ -35,7 +34,7 @@ function Banner({ variant, children }: { variant?: BannerVariant; children?: Rea
   );
 }
 
-export function FormContent({ targetRepo, token }: FormProps) {
+export function FormContent({ targetRepo }: FormProps) {
   const [loadingSecrets, setLoadingSecrets] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "secrets" | "workflows">("overview");
   const [submissionState, setSubmissionState] = useState<"idle" | "submitting" | "submitted">("idle");
@@ -49,7 +48,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
   const [unlockedFields, setUnlockedFields] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    getExistingSecrets(token)
+    getExistingSecrets()
       .then((existing) => {
         const pre: Record<string, SecretResult> = {};
         for (const name of existing) pre[name] = "ok";
@@ -60,7 +59,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
   }, []);
 
   useEffect(() => {
-    getBranchStatus(token)
+    getBranchStatus()
       .then((exists) => setBranchStatus(exists ? "exists" : "clear"))
       .catch(() => setBranchStatus("clear"));
   }, []);
@@ -68,7 +67,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
   function startWorkflow(restart = false) {
     setWorkflowStatus("running");
     setWorkflowLog([]);
-    const es = createWorkflowStream(token, restart);
+    const es = createWorkflowStream(restart);
     es.addEventListener("message", (e) => {
       const event = JSON.parse((e as MessageEvent).data) as LogEvent;
       setWorkflowLog(prev => [...prev, event]);
@@ -106,7 +105,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
     setBanner({ msg: "Submitting\u2026" });
     try {
       const data = new URLSearchParams(new FormData(e.currentTarget) as unknown as Record<string, string>);
-      const results = await submitSecrets(token, data);
+      const results = await submitSecrets(data);
       setStatuses(results);
       const failed = Object.values(results).filter(
         (r: unknown) => r && typeof r === "object" && "error" in r,

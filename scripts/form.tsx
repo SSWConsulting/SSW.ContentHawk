@@ -7,22 +7,22 @@ export { SECRETS };
 
 type Page = "install" | "new-campaign" | "campaigns";
 
-export function renderForm(targetRepo: string, token: string, css: string, page: Page = "install"): string {
+export function renderForm(targetRepo: string, css: string, page: Page = "install"): string {
   let inner: string;
   let props: string;
 
   if (page === "install") {
-    inner = renderToString(<FormContent targetRepo={targetRepo} token={token} />);
-    props = JSON.stringify({ targetRepo, token });
+    inner = renderToString(<FormContent targetRepo={targetRepo} />);
+    props = JSON.stringify({ targetRepo });
   } else if (page === "campaigns") {
-    inner = renderToString(<CampaignsPage targetRepo={targetRepo} token={token} />);
-    props = JSON.stringify({ page, targetRepo, token });
+    inner = renderToString(<CampaignsPage targetRepo={targetRepo} />);
+    props = JSON.stringify({ page, targetRepo });
   } else {
-    inner = renderToString(<NewCampaignPage targetRepo={targetRepo} token={token} />);
-    props = JSON.stringify({ page, targetRepo, token });
+    inner = renderToString(<NewCampaignPage targetRepo={targetRepo} />);
+    props = JSON.stringify({ page, targetRepo });
   }
 
-  const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
+  const bundleSrc = "/bundle.js";
   return `<!doctype html>
 <html>
 <head>

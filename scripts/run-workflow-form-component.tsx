@@ -82,10 +82,9 @@ function PageShell({ className, children }: PageShellProps) {
 
 export interface NewCampaignPageProps {
   targetRepo: string;
-  token: string;
 }
 
-export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
+export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<LogEvent[]>([]);
   const [prUrl, setPrUrl] = useState<string | null>(null);
@@ -113,7 +112,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
     setStatus("running");
     setLog([]);
 
-    const params = new URLSearchParams({ token });
+    const params = new URLSearchParams();
     for (const field of FIELDS) params.set(field.name, values[field.name]);
 
     const es = new EventSource(`/run-workflow-stream?${params}`);
@@ -127,7 +126,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
       const data = (e as MessageEvent).data ? JSON.parse((e as MessageEvent).data) as { runId?: string } : {};
       if (data.runId) {
         try {
-          const prRes = await fetch(`/github/pr-for-run?token=${encodeURIComponent(token)}&run_id=${encodeURIComponent(data.runId)}`);
+          const prRes = await fetch(`/github/pr-for-run?run_id=${encodeURIComponent(data.runId)}`);
           if (prRes.ok) {
             const prData = await prRes.json() as { url: string | null };
             if (prData.url) setPrUrl(prData.url);
@@ -217,23 +216,22 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
 
 export interface CampaignsPageProps {
   targetRepo: string;
-  token: string;
 }
 
-export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
+export function CampaignsPage({ targetRepo }: CampaignsPageProps) {
   const [campaignStatuses, setCampaignStatuses] = useState<CampaignStatus[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<ResolvedCatalog>({});
   const [openIssueCounts, setOpenIssueCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    fetchCampaignStatuses(token).then((statuses) => {
+    fetchCampaignStatuses().then((statuses) => {
       setCampaignStatuses(statuses);
       if (statuses.length > 0) setSelectedCampaign(statuses[0].name);
     });
-    fetchCampaignItems(token).then(setCatalog);
-    fetchOpenIssueCounts(token).then(setOpenIssueCounts);
-  }, [token]);
+    fetchCampaignItems().then(setCatalog);
+    fetchOpenIssueCounts().then(setOpenIssueCounts);
+  }, []);
 
   return (
     <PageShell className="">
@@ -256,8 +254,8 @@ export function CampaignsPage({ targetRepo, token }: CampaignsPageProps) {
               : <p className="text-sm text-muted-foreground col-span-1">No campaign data available.</p>}
             <CampaignActions
               openIssueCount={openIssueCounts[selectedCampaign ?? ""] ?? 0}
-              judgeStreamUrl={`/run-judge?token=${encodeURIComponent(token)}`}
-              fixerStreamUrl={`/run-fixer?token=${encodeURIComponent(token)}`}
+              judgeStreamUrl="/run-judge"
+              fixerStreamUrl="/run-fixer"
               issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign ?? "")}`}
               pullsUrl={`https://github.com/${targetRepo}/pulls?q=is:open+label:${encodeURIComponent(selectedCampaign ?? "")}`}
               className="col-span-1 mt-0"

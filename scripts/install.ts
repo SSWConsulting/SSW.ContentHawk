@@ -8,12 +8,10 @@
  *   campaigns    <owner/repo> [<content-catalog-json>] — manage existing campaigns
  *
  * Spins up an Express server on 127.0.0.1:<random>, opens a browser, and
- * serves the appropriate UI. A single-use token in the URL prevents other
- * local processes from intercepting.
+ * serves the appropriate UI.
  */
 
 import { spawn, spawnSync } from "node:child_process";
-import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,7 +20,7 @@ import postcss from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import fs from "node:fs/promises";
 import express from "express";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { SECRETS, renderForm } from "./form.tsx";
 import {
   CONTENTHAWK_INSTALL_BRANCH,
@@ -375,18 +373,11 @@ export async function main(argv = process.argv.slice(2)) {
     buildCSS(),
   ]);
 
-  const token = crypto.randomBytes(24).toString("base64url");
-
   // SSE helpers
   const sseLog = (res: Response, event: LogEvent) => res.write(`data: ${JSON.stringify(event)}\n\n`);
   const sseText = (res: Response, message: string) => sseLog(res, { type: "log", message });
   const sseLine = (res: Response, line: string) =>
     /^https?:\/\//.test(line) ? sseLog(res, { type: "link", message: line, url: line }) : sseText(res, line);
-
-  function requireToken(req: Request, res: Response): boolean {
-    if (req.query["token"] !== token) { res.sendStatus(401); return false; }
-    return true;
-  }
 
   const app = express();
   app.use(express.urlencoded({ extended: false }));
@@ -396,7 +387,7 @@ export async function main(argv = process.argv.slice(2)) {
   app.get("/", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    const html = renderForm(targetRepo, token, css, mode);
+    const html = renderForm(targetRepo, css, mode);
     res.end(html);
   });
 
@@ -558,7 +549,6 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     app.get(["/run-judge", "/run-fixer"], async (req, res) => {
-      if (!requireToken(req, res)) return;
       const workflowFile = req.path === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
       res.flushHeaders();
@@ -577,7 +567,6 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     app.get("/github/pr-for-run", async (req, res) => {
-      if (!requireToken(req, res)) return;
       const runId = req.query["run_id"];
       if (typeof runId !== "string" || !githubToken) { res.sendStatus(400); return; }
 
@@ -595,7 +584,6 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     app.get("/github/issues", async (req, res) => {
-      if (!requireToken(req, res)) return;
       const { owner, repo, issue_number } = req.query;
       if (typeof owner !== "string" || typeof repo !== "string" || typeof issue_number !== "string" || !githubToken) {
         res.sendStatus(400); return;
@@ -617,7 +605,7 @@ export async function main(argv = process.argv.slice(2)) {
   await new Promise<void>((r) => server.once("listening", r));
   const addr = server.address();
   if (typeof addr === "string" || !addr) die("Failed to bind server");
-  const serverUrl = `http://127.0.0.1:${addr.port}/?token=${encodeURIComponent(token)}`;
+  const serverUrl = `http://127.0.0.1:${addr.port}/`;
 
   console.error(`Open ${serverUrl} in your browser.`);
   openBrowser(serverUrl);

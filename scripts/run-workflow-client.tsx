@@ -7,5 +7,5 @@ const Component = props.page === "campaigns" ? CampaignsPage : NewCampaignPage;
 
 hydrateRoot(
   document.getElementById("app")!,
-  <Component targetRepo={props.targetRepo} token={props.token} />,
+  <Component targetRepo={props.targetRepo} />,
 );
