@@ -5,6 +5,7 @@ import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-statu
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
 import { Check, X } from 'lucide-react';
+import { Spinner } from "./components/spinner";
 import { OutboundLink } from "./components/outbound-link";
 
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -196,7 +197,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
         </div>
       )}
 
-      {status === "running" && <Button disabled>Running...</Button>}
+      {status === "running" && <Button disabled> Running <Spinner /></Button>}
       {status === "done" && (
         <div className="flex flex-col gap-2">
           <p className="text-green-500 font-semibold text-sm flex items-center gap-1"><Check className="size-4" /> Workflow completed successfully.</p>

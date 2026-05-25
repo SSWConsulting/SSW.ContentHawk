@@ -7,6 +7,7 @@ import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createW
 import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
 import { SseLog, type LogEvent } from "./components/sse-log";
 import { OutboundLink } from "./components/outbound-link";
+import { Spinner } from "./components/spinner";
 
 export const SECRETS = ["TAVILY_API_KEY", "COPILOT_GITHUB_TOKEN"] as const;
 
@@ -276,7 +277,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
               Copy GitHub Actions workflows from SSWConsulting/SSW.ContentHawk into this repo and open a pull request.
             </p>
             {workflowStatus === "running" ? (
-              <Button disabled>Setting up…</Button>
+              <Button disabled> Setting up <Spinner /></Button>
             ) : branchStatus === "checking" ? (
               <p className="text-sm text-muted-foreground">Checking installation status…</p>
             ) : branchStatus === "exists" && workflowStatus !== "done" && workflowStatus !== "no-changes" ? (

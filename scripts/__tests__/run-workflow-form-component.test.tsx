@@ -79,7 +79,7 @@ describe("NewCampaignPage", () => {
     await fillAllFields(container);
     await userEvent.click(screen.getByRole("button", { name: "Run Workflow" }));
 
-    expect(screen.getByRole("button", { name: "Running..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Running/ })).toBeDisabled();
     expect(container.querySelector("form")).toBeNull();
   });
 
