@@ -158,8 +158,7 @@ describe("GitHub Secrets tab", () => {
     // ASSERT
     await waitFor(() => {
       expect(screen.getByText(`✓ Pull request created successfully.`)).toBeInTheDocument();
-       expect(screen.getByRole("link", { name: "https://github.com/owner/repo/pull/1" })).toBeInTheDocument();
-
+      expect(screen.getByRole("link", { name: /View generated PR/i })).toHaveAttribute("href", "https://github.com/owner/repo/pull/1");
     });
   });
 

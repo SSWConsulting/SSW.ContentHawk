@@ -4,7 +4,8 @@ import { Button } from "./components/ui/button";
 import { CampaignStatusPanel, CampaignStatus } from "./components/campaign-status-panel";
 import { CampaignItemsTable } from "./components/campaign-items-table";
 import { CampaignActions } from "./components/campaign-actions";
-import { Check, X, ExternalLink } from 'lucide-react';
+import { Check, X } from 'lucide-react';
+import { OutboundLink } from "./components/outbound-link";
 
 import { TooltipProvider } from "./components/ui/tooltip";
 import { FormInput, FormTextarea } from "./components/form-controls";
@@ -199,11 +200,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
       {status === "done" && (
         <div className="flex flex-col gap-2">
           <p className="text-green-500 font-semibold text-sm flex items-center gap-1"><Check className="size-4" /> Workflow completed successfully.</p>
-          {prUrl && (
-            <a href={prUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline font-mono">
-              <ExternalLink className="size-3.5" /> View generated PR
-            </a>
-          )}
+          {prUrl && <OutboundLink href={prUrl}>View generated PR</OutboundLink>}
         </div>
       )}
       {status === "error" && (

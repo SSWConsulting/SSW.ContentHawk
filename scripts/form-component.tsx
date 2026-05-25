@@ -6,6 +6,7 @@ import { cn } from "./lib/utils";
 import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createWorkflowStream } from "./services/github-service";
 import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
 import { SseLog, type LogEvent } from "./components/sse-log";
+import { OutboundLink } from "./components/outbound-link";
 
 export const SECRETS = ["TAVILY_API_KEY", "COPILOT_GITHUB_TOKEN"] as const;
 
@@ -276,7 +277,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
             ) : branchStatus === "exists" && workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
               <>
                 <Banner variant="info">An installation branch already exists: {CONTENTHAWK_INSTALL_BRANCH}.</Banner>
-                <Button variant="outline" type="button" onClick={() => startWorkflow(true)}>Restart Installation</Button>
+                <Button variant="default" type="button" onClick={() => startWorkflow(true)}>Restart Installation</Button>
               </>
             ) : workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
               <Button type="button" onClick={() => startWorkflow(false)}>Set up Workflows</Button>
@@ -288,15 +289,12 @@ export function FormContent({ targetRepo, token }: FormProps) {
               </p>
             )}
             {workflowStatus === "done" && (
-              <p className="mt-2 text-sm font-semibold">
-                <span className="text-green-500">✓ Pull request created successfully.{" "}</span>
-                {prUrl && (
-                  <a role="link" href={prUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                    {prUrl}
-                  </a>
-                )}
-              </p>
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-sm font-semibold text-green-500">✓ Pull request created successfully.</p>
+                {prUrl && <OutboundLink href={prUrl}>View generated PR</OutboundLink>}
+              </div>
             )}
+            
             {workflowStatus === "no-changes" && (
               <div className="mt-4">
                 <Banner variant="info">
@@ -305,7 +303,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
               </div>
             )}
             {workflowStatus === "error" && (
-              <p className="text-destructive mt-2 text-sm font-semibold">✗ Setup failed. See log above.</p>
+              <p className="text-primary mt-2 text-sm font-semibold">✗ Setup failed. See log above.</p>
             )}
           </div>
         )}
