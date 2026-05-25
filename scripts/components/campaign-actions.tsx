@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { cn } from "../lib/utils";
-
-type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
+import { SseLog, type LogEvent } from "./sse-log";
 
 interface CampaignActionsProps {
   openIssueCount: number;
@@ -87,15 +86,7 @@ export function CampaignActions({
         </Button>
       </div>
 
-      {log.length > 0 && (
-        <div className="mt-3 text-xs bg-card border border-border rounded p-3 max-h-48 overflow-y-auto font-mono">
-          {log.map((entry, i) =>
-            <span key={i} className="block whitespace-pre-wrap text-muted-foreground">
-              {entry.message}
-            </span>
-          )}
-        </div>
-      )}
+      <SseLog entries={log} className="mt-3" />
 
       {result === "judge" && (
         <p className="mt-3 text-sm">

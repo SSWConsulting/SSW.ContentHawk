@@ -5,6 +5,7 @@ import { Card, CardContent } from "./components/ui/card";
 import { cn } from "./lib/utils";
 import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createWorkflowStream } from "./services/github-service";
 import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
+import { SseLog, type LogEvent } from "./components/sse-log";
 
 export const SECRETS = ["TAVILY_API_KEY", "COPILOT_GITHUB_TOKEN"] as const;
 
@@ -39,7 +40,6 @@ export function FormContent({ targetRepo, token }: FormProps) {
   const [banner, setBanner] = useState<{ variant?: BannerVariant; msg: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [statuses, setStatuses] = useState<Record<string, SecretResult>>({});
-  type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
   const [workflowStatus, setWorkflowStatus] = useState<"idle" | "running" | "done" | "error" | "no-changes">("idle");
   const [workflowLog, setWorkflowLog] = useState<LogEvent[]>([]);
   const [prUrl, setPrUrl] = useState<string | null>(null);
@@ -281,13 +281,7 @@ export function FormContent({ targetRepo, token }: FormProps) {
             ) : workflowStatus !== "done" && workflowStatus !== "no-changes" ? (
               <Button type="button" onClick={() => startWorkflow(false)}>Set up Workflows</Button>
             ) : null}
-            {workflowLog.length > 0 && (
-              <div className="mt-4 text-xs bg-card border border-border rounded p-3 max-h-48 overflow-y-auto font-mono">
-                {workflowLog.map((entry, i) =>
-                  <span key={i} className="block whitespace-pre-wrap text-muted-foreground">{entry.message}</span>
-                )}
-              </div>
-            )}
+            <SseLog entries={workflowLog} className="mt-4" />
             {(workflowStatus === "done" || workflowStatus === "no-changes") && (
               <p className="mt-2 text-sm text-muted-foreground">
                 The CLI has finished — you can safely close this tab.

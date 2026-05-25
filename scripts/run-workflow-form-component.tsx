@@ -11,8 +11,7 @@ import { FormInput, FormTextarea } from "./components/form-controls";
 import { Card, CardContent } from "./components/ui/card";
 import { fetchCampaignStatuses, fetchCampaignItems, fetchOpenIssueCounts } from "./services/contenthawk-service";
 import type { ResolvedCatalog } from "./types";
-
-type LogEvent = { type: "log"; message: string } | { type: "link"; message: string; url: string };
+import { SseLog, type LogEvent } from "./components/sse-log";
 
 const FIELDS = [
   {
@@ -211,21 +210,7 @@ export function NewCampaignPage({ targetRepo, token }: NewCampaignPageProps) {
         <p className="text-destructive flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>
       )}
 
-      {log.length > 0 && (
-        <div className="mt-4 text-xs bg-card border border-border rounded p-3 max-h-64 overflow-y-auto font-mono">
-          {log.map((entry, i) =>
-            entry.type === "link" ? (
-              <a key={i} href={entry.url} target="_blank" rel="noopener noreferrer" className="block text-primary underline whitespace-pre-wrap">
-                {entry.message}
-              </a>
-            ) : (
-              <span key={i} className="block whitespace-pre-wrap text-muted-foreground">
-                {entry.message}
-              </span>
-            ),
-          )}
-        </div>
-      )}
+      <SseLog entries={log} className="mt-4 max-h-64" />
         </CardContent>
       </Card>
     </PageShell>
