@@ -23,8 +23,7 @@ import tailwindcss from "@tailwindcss/postcss";
 import fs from "node:fs/promises";
 import express from "express";
 import type { Request, Response } from "express";
-import { SECRETS, renderForm as renderInstallForm } from "./form.tsx";
-import { renderForm as renderRunForm } from "./run-workflow-form.tsx";
+import { SECRETS, renderForm } from "./form.tsx";
 import {
   CONTENTHAWK_INSTALL_BRANCH,
   CONTENTHAWK_WORKFLOW_FILE,
@@ -397,9 +396,7 @@ export async function main(argv = process.argv.slice(2)) {
   app.get("/", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    const html = mode === "install"
-      ? renderInstallForm(targetRepo, token, css)
-      : renderRunForm(targetRepo, token, css, mode);
+    const html = renderForm(targetRepo, token, css, mode);
     res.end(html);
   });
 

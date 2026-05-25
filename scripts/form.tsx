@@ -1,12 +1,27 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { FormContent, SECRETS } from "./form-component.tsx";
+import { NewCampaignPage, CampaignsPage } from "./run-workflow-form-component.tsx";
 
 export { SECRETS };
 
-export function renderForm(targetRepo: string, token: string, css: string): string {
-  const inner = renderToString(<FormContent targetRepo={targetRepo} token={token} />);
-  const props = JSON.stringify({ targetRepo, token });
+type Page = "install" | "new-campaign" | "campaigns";
+
+export function renderForm(targetRepo: string, token: string, css: string, page: Page = "install"): string {
+  let inner: string;
+  let props: string;
+
+  if (page === "install") {
+    inner = renderToString(<FormContent targetRepo={targetRepo} token={token} />);
+    props = JSON.stringify({ targetRepo, token });
+  } else if (page === "campaigns") {
+    inner = renderToString(<CampaignsPage targetRepo={targetRepo} token={token} />);
+    props = JSON.stringify({ page, targetRepo, token });
+  } else {
+    inner = renderToString(<NewCampaignPage targetRepo={targetRepo} token={token} />);
+    props = JSON.stringify({ page, targetRepo, token });
+  }
+
   const bundleSrc = `/bundle.js?token=${encodeURIComponent(token)}`;
   return `<!doctype html>
 <html>
