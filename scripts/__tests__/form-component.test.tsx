@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { FormContent, SECRETS } from "../form-component";
+import { InstallPage, SECRETS } from "../pages/install";
 import * as service from "../services/github-service";
 
 vi.mock("../services/github-service");
@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 async function renderAndOpenSecrets() {
-  const result = render(<FormContent {...props} />);
+  const result = render(<InstallPage {...props} />);
   await userEvent.click(screen.getByRole("button", { name: /Get Started/ }));
   return result;
 }
@@ -28,7 +28,7 @@ describe("GitHub Secrets tab", () => {
     vi.mocked(service.getExistingSecrets).mockReturnValue(new Promise((r) => (resolve = r)));
 
     // ACT
-    render(<FormContent {...props} />);
+    render(<InstallPage {...props} />);
 
     // ASSERT
     expect(screen.getByRole("alert", { name: "loading" })).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import type { SecretResult } from "../form-component";
+import type { SecretResult } from "../pages/install";
 
 export async function killServer(): Promise<void> {
   await fetch("/kill", { method: "POST" });

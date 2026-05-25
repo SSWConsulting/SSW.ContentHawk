@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { LoaderCircle, Lock, LockOpen, Check, X, AlertTriangle, ChevronRight } from "lucide-react";
-import { Button } from "./components/ui/button";
-import { Card, CardContent } from "./components/ui/card";
-import { Input } from "./components/ui/input";
-import { cn } from "./lib/utils";
-import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createWorkflowStream } from "./services/github-service";
-import { CONTENTHAWK_INSTALL_BRANCH } from "./constants";
-import { SseLog, type LogEvent } from "./components/sse-log";
-import { OutboundLink } from "./components/outbound-link";
-import { Spinner } from "./components/spinner";
-import { Message } from "./message";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { cn } from "../lib/utils";
+import { killServer, getExistingSecrets, getBranchStatus, submitSecrets, createWorkflowStream } from "../services/github-service";
+import { CONTENTHAWK_INSTALL_BRANCH } from "../constants";
+import { SseLog, type LogEvent } from "../components/sse-log";
+import { OutboundLink } from "../components/outbound-link";
+import { Spinner } from "../components/spinner";
+import { Message } from "../message";
 
 export const SECRETS = ["TAVILY_API_KEY", "COPILOT_GITHUB_TOKEN"] as const;
 
 export type SecretResult = "ok" | "skipped" | { error: string };
 
-export interface FormProps {
+export interface InstallPageProps {
   targetRepo: string;
 }
 
@@ -36,7 +36,7 @@ function Banner({ variant, children }: { variant?: BannerVariant; children?: Rea
   );
 }
 
-export function FormContent({ targetRepo }: FormProps) {
+export function InstallPage({ targetRepo }: InstallPageProps) {
   const [loadingSecrets, setLoadingSecrets] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "secrets" | "workflows">("overview");
   const [submissionState, setSubmissionState] = useState<"idle" | "submitting" | "submitted">("idle");

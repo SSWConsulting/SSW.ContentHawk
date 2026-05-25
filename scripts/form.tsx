@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { FormContent, SECRETS } from "./form-component.tsx";
+import { InstallPage, SECRETS } from "./pages/install.tsx";
 import { NewCampaignPage, CampaignsPage } from "./run-workflow-form-component.tsx";
 
 export { SECRETS };
@@ -12,7 +12,7 @@ export function renderForm(targetRepo: string, css: string, page: Page = "instal
   let props: string;
 
   if (page === "install") {
-    inner = renderToString(<FormContent targetRepo={targetRepo} />);
+    inner = renderToString(<InstallPage targetRepo={targetRepo} />);
     props = JSON.stringify({ page, targetRepo });
   } else if (page === "campaigns") {
     inner = renderToString(<CampaignsPage targetRepo={targetRepo} />);
