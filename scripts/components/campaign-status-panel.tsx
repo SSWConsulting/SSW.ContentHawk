@@ -20,7 +20,7 @@ function CircleProgress({ percent }: { percent: number }) {
         cy="20"
         r={r}
         fill="none"
-        style={{ stroke: percent === 100 ? "oklch(0.723 0.219 149.579)" : "var(--primary)" }}
+        style={{ stroke: percent === 100 ? "oklch(0.556 0 0)" : "var(--primary)" }}
         strokeWidth="4"
         strokeDasharray={c}
         strokeDashoffset={offset}
@@ -78,7 +78,7 @@ export function CampaignStatusPanel({
                 {s.name}
               </span>
               {s.current && (
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-green-500/15 text-green-500 border border-green-600/30">
                   Current
                 </span>
               )}
