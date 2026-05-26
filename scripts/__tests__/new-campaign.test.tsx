@@ -110,7 +110,7 @@ describe("NewCampaignPage", () => {
     });
   });
 
-  it("shows an error message and re-shows the form when the failed event fires", async () => {
+  it("shows an error message when the failed event fires", async () => {
     const { container } = render(<NewCampaignPage {...props} />);
     await fillAllFields(container);
     await userEvent.click(screen.getByRole("button", { name: "Run Workflow" }));
@@ -121,8 +121,20 @@ describe("NewCampaignPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Workflow failed/i)).toBeInTheDocument();
-      expect(container.querySelector("form")).toBeInTheDocument();
     });
+  });
+
+  it("does not re-show the form after the workflow fails", async () => {
+    const { container } = render(<NewCampaignPage {...props} />);
+    await fillAllFields(container);
+    await userEvent.click(screen.getByRole("button", { name: "Run Workflow" }));
+
+    await act(async () => {
+      mockEs.dispatchEvent(new MessageEvent("failed", { data: JSON.stringify("permission denied") }));
+    });
+
+    await waitFor(() => expect(screen.getByText(/Workflow failed/i)).toBeInTheDocument());
+    expect(container.querySelector("form")).toBeNull();
   });
 
   it("appends log messages to the log panel during a run", async () => {

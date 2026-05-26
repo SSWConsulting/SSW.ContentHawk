@@ -133,7 +133,7 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
         <CardContent>
           <h1 className="text-xl mb-0 text-foreground">New Campaign</h1>
           <p className="text-muted-foreground font-mono mt-1 pb-6 text-sm">{targetRepo}</p>
-          {(status === "idle" || status === "error") && (
+          {status === "idle" && (
             <div className="bg-muted rounded-lg p-4">
               <form onSubmit={startRun} noValidate>
                 {FIELDS.map((field) => (
@@ -178,7 +178,7 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
             </div>
           )}
           {status === "error" && (
-            <p className="text-destructive flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log above.</p>
+            <p className="text-primary flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log below.</p>
           )}
           <SseLog entries={log} className="mt-4 max-h-64" />
         </CardContent>
