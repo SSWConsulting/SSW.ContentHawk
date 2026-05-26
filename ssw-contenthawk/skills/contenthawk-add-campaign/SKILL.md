@@ -1,6 +1,6 @@
 ---
-description: "Guides the user through starting a new content campaign."
-allowed-tools: Read, Bash, WebFetch
+name: contenthawk-add-campaign
+description: "Start a new ContentHawk content campaign on a target GitHub repository."
 ---
 
 # ContentHawk — Workflow Runner

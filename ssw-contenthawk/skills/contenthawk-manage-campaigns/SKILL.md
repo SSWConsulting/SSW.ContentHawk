@@ -1,6 +1,6 @@
 ---
-description: "Read all the state of all content campaigns and allows the user to visualize and manage them."
-allowed-tools: Read, Bash, WebFetch
+name: contenthawk-manage-campaigns
+description: "Visualize and manage all active ContentHawk content campaigns for a target GitHub repository."
 ---
 
 # ContentHawk — Manage Campaigns
