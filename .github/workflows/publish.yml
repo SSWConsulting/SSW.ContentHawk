@@ -33,3 +33,6 @@ jobs:
 
       - name: 🚀️ Publish to NPM
         run: pnpm publish --no-git-checks --access public --provenance
+        env: 
+            NPM_CONFIG_PROVENANCE: true
+                
