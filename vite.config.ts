@@ -56,7 +56,7 @@ export default defineConfig(async () => {
     },
     generateBundle(_options, bundle) {
       for (const chunk of Object.values(bundle)) {
-        if ("code" in chunk && chunk.fileName === "install.js") {
+        if ("code" in chunk && chunk.fileName === "content-hawk.js") {
           // Replace the dev shebang from the source with the node one.
           // Using banner: causes a rolldown bug that truncates the output.
           chunk.code = chunk.code.replace(/^#!.*\n/, "#!/usr/bin/env node\n");
@@ -66,6 +66,13 @@ export default defineConfig(async () => {
     async writeBundle(options) {
       const outDir = options.dir ?? path.join(root, "dist");
       await fs.copyFile(cssPath, path.join(outDir, "form.css"));
+
+      const imagesDir = path.join(root, "scripts/images");
+      const destImagesDir = path.join(outDir, "images");
+      await fs.mkdir(destImagesDir, { recursive: true });
+      for (const file of await fs.readdir(imagesDir)) {
+        await fs.copyFile(path.join(imagesDir, file), path.join(destImagesDir, file));
+      }
     },
   };
 
@@ -78,14 +85,15 @@ export default defineConfig(async () => {
     plugins: [inlineAssets, react()],
     build: {
       outDir: "dist",
-      target: "node18",
-      ssr: "scripts/install.ts",
+      target: "node22",
+      ssr: "scripts/content-hawk.ts",
+      minify: true,
       rollupOptions: {
         external: (id: string) => nodeBuiltins.has(id) || id.endsWith(".node"),
         treeshake: true,
         output: {
           format: "cjs",
-          entryFileNames: "install.js",
+          entryFileNames: "content-hawk.js",
         },
       },
     },
