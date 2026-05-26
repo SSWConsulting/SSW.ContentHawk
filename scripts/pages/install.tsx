@@ -80,12 +80,12 @@ export function InstallPage({ targetRepo }: InstallPageProps) {
       es.close();
       setWorkflowStatus("done");
       setBranchStatus("exists");
-      killServer();
+      killServer("ContentHawk installation completed successfully");
     });
     es.addEventListener("no-changes", () => {
       es.close();
       setWorkflowStatus("no-changes");
-      killServer();
+      killServer("ContentHawk installation cancelled, files already up to date");
     });
     es.addEventListener("failed", (e: Event) => {
       es.close();
