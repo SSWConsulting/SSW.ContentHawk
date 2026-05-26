@@ -9,7 +9,12 @@ export interface ContentItem {
   createdDate: string;
 }
 
-export type ContentCatalog = Record<string, ContentItem[]>;
+export interface CampaignData {
+  done?: boolean;
+  items: ContentItem[];
+}
+
+export type ContentCatalog = Record<string, CampaignData>;
 
 interface BaseItem {
   path: string;

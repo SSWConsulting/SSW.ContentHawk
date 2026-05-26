@@ -225,7 +225,7 @@ async function resolveCatalog(
   type Task = { campaign: string; index: number; issueNumber: number };
 
   const tasks: Task[] = [];
-  for (const [campaign, items] of Object.entries(catalog)) {
+  for (const [campaign, { items }] of Object.entries(catalog)) {
     for (let i = 0; i < items.length; i++) {
       if (typeof items[i].checkResult === "number") {
         tasks.push({ campaign, index: i, issueNumber: items[i].checkResult as number });
@@ -253,7 +253,7 @@ async function resolveCatalog(
   const resolved: ResolvedCatalog = {};
   const openIssueCounts: Record<string, number> = {};
 
-  for (const [campaign, items] of Object.entries(catalog)) {
+  for (const [campaign, { items }] of Object.entries(catalog)) {
     let openCount = 0;
     resolved[campaign] = items.map((item, index): ResolvedItem => {
       const { path: p, lastUpdated, checkedDate, categoryList, createdDate } = item;
@@ -321,9 +321,11 @@ function watchRun(runId: string, targetRepo: string, onLine: (l: string) => void
 }
 
 function computeCampaignStatuses(catalog: ContentCatalog): CampaignStatus[] {
-  return Object.entries(catalog).map(([name, items]) => {
-    const done = items.filter((i) => i.checkResult !== "pending").length;
-    return { name, percent: items.length === 0 ? 0 : Math.round((done / items.length) * 100) };
+  let currentAssigned = false;
+  return Object.entries(catalog).map(([name, { done, items }]) => {
+    const percent = items.length === 0 ? 0 : Math.round((items.filter((i) => i.checkResult !== "pending").length / items.length) * 100);
+    const current = !done && !currentAssigned ? (currentAssigned = true) : false;
+    return { name, percent, done: done ?? false, current };
   });
 }
 
@@ -347,7 +349,8 @@ function parseArgs(argv: string[]): { mode: Mode; targetRepo: string; contentCat
   try { parsed = JSON.parse(catalogJson); } catch { die("content catalog: invalid JSON"); }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) die("content catalog: expected a JSON object");
   for (const val of Object.values(parsed as Record<string, unknown>)) {
-    if (!Array.isArray(val)) die("content catalog: each entry must be an array of ContentItems");
+    if (typeof val !== "object" || val === null || Array.isArray(val)) die("content catalog: each entry must be a campaign object with an items array");
+    if (!Array.isArray((val as Record<string, unknown>).items)) die("content catalog: each campaign entry must have an items array");
   }
 
   return { mode, targetRepo, contentCatalog: parsed as ContentCatalog };

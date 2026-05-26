@@ -4,6 +4,8 @@ import { cn } from "../lib/utils";
 export interface CampaignStatus {
   name: string;
   percent: number;
+  current?: boolean;
+  done?: boolean;
 }
 
 function CircleProgress({ percent }: { percent: number }) {
@@ -72,9 +74,19 @@ export function CampaignStatusPanel({
                 .join(" ")}
             >
               <CircleProgress percent={s.percent} />
-              <span className="font-mono text-sm text-foreground truncate" title={s.name}>
+              <span className="font-mono text-sm text-foreground truncate flex-1 min-w-0" title={s.name}>
                 {s.name}
               </span>
+              {s.current && (
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">
+                  Current
+                </span>
+              )}
+              {s.done && (
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted-foreground/15 text-muted-foreground border border-muted-foreground/30">
+                  Done
+                </span>
+              )}
             </li>
           );
         })}
