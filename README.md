@@ -164,3 +164,8 @@ To cut a new release:
 ### Skill
 
 The skills in `ssw-contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw-contenthawk`.
+
+### Publishing new versions of the npx commands
+
+1. Get your code changes merged to main, ensuring you bump the version in `package.json` using [npm version](https://docs.npmjs.com/cli/v8/commands/npm-version) with [semver](https://semver.org/).
+2. Go to **Releases | Draft a new release** in GitHub, add a release tag matching the version you set in `package.json` (e.g. `v0.1.16`), and publish the release. This triggers the GitHub Action workflow that builds and publishes the package to npm. You can use the automatically generated release notes or add your own.
