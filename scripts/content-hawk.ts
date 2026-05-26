@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { spawn, spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
