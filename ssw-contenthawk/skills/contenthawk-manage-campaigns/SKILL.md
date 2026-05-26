@@ -31,6 +31,12 @@ type ContentCatalog = Record<string, CampaignData>;
 
 ## Procedure
 
+# Step 0 - Prerequisites
+
+1. **Verify `gh` is authenticated.** Run `gh auth status`. If it fails, tell the user to run `gh auth login` and stop.
+2. **Verify the user has their username set** in their GitHub CLI config. Run `git config --global user.name`. and `git config --global user.email`. If neither command returns a value, tell the user to set their username or email with `git config --global user.name "Your Name"` or `git config --global user.email "your.email@example.com"` and stop.
+
+
 ### Step 1 — Ask for the target repo
 
 Ask the user: **Which GitHub repository would you like to manage campaigns for?** (format: `owner/repo`)
