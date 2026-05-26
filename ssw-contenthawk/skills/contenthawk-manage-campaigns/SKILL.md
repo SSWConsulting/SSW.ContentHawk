@@ -105,7 +105,7 @@ Serialize the `ContentCatalog` to a compact JSON string (no pretty-printing).
 Run the workflow runner in campaigns mode:
 
 ```bash
-npx tsx scripts/content-hawk.ts campaigns <owner/repo> '<content-catalog-json>'
+npx ssw-contenthawk@latest campaigns <owner/repo> '<content-catalog-json>'
 ```
 
 Replace `<owner/repo>` with the value from Step 1 and `<content-catalog-json>` with the serialized JSON.

@@ -20,7 +20,7 @@ Ask the user: **Which GitHub repository should the workflow run on?** (format: `
 Run the workflow runner:
 
 ```bash
-npx tsx scripts/run-workflow.ts new-campaign <owner/repo>'
+npx ssw-contenthawk@latest new-campaign <owner/repo>'
 ```
 
 Replace `<owner/repo>` with the value from Step 1.
