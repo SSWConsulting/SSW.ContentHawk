@@ -90,6 +90,9 @@ importers:
       shadcn:
         specifier: ^4.8.0
         version: 4.8.0(@types/node@22.19.19)
+      vite:
+        specifier: ^8.0.14
+        version: 8.0.14(@types/node@22.19.19)(esbuild@0.28.0)(jiti@2.7.0)
       vitest:
         specifier: ^4.1.5
         version: 4.1.7(@types/node@22.19.19)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@22.19.19))(vite@8.0.14(@types/node@22.19.19)(esbuild@0.28.0)(jiti@2.7.0))
