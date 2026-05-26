@@ -9,4 +9,6 @@ When classes need to be merged, use the `cn` utility function from `./lib/utils.
 Bugs and edge cases are likely to arise on the front end. Whenever you fix a bug on the front end be sure to add a new test in `scripts/__tests__` to cover the bug you just fixed to ensure there are no regressions.
 
 ### Back end
-Be sure to handle any sensitive operations (e.g. running task in GitHub) here. If the front end needs to trigger an event, or operation in github, create an API for this, add a method in `github-service.ts` that calls this API, and call that method from the front end. Do not call GitHub APIs directly from the front end or expose any sensitive information (e.g. tokens) to the front end.
+Be sure to handle any sensitive operations (e.g. running task in GitHub) here. If the front end needs to trigger an event or operation, create an API for this and call it via a service method from the front end. Do not call GitHub APIs directly from the front end or expose any sensitive information (e.g. tokens) to the front end.
+
+Use `github-service.ts` for methods that interact with GitHub (secrets, branches, workflow streams, PRs). Use `contenthawk-service.ts` for any other back-end calls that are not GitHub-specific (e.g. campaign data, server lifecycle).
