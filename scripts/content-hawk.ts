@@ -321,12 +321,12 @@ function computeCampaignStatuses(catalog: ContentCatalog): CampaignStatus[] {
 function parseArgs(argv: string[]): { mode: Mode; targetRepo: string; contentCatalog: ContentCatalog | null } {
   const mode = argv[0] as Mode;
   if (mode !== "install" && mode !== "new-campaign" && mode !== "campaigns") {
-    die("Usage: install.ts <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
+    die("Usage: npx ssw-contenthawk <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
   }
 
   const targetRepo = argv[1];
   if (!targetRepo || !targetRepo.includes("/") || targetRepo.startsWith("/") || targetRepo.endsWith("/")) {
-    die("Usage: content-hawk.js <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
+    die("Usage: npx ssw-contenthawk <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
   }
 
   const catalogJson = argv[2];
