@@ -4,6 +4,7 @@ import { cn } from "../lib/utils";
 import { SseLog, type LogEvent } from "./sse-log";
 import { Spinner } from "./spinner";
 import { OutboundLink } from "./outbound-link";
+import { killServer } from "@/services/contenthawk-service";
 
 interface CampaignActionsProps {
   openIssueCount: number;
@@ -41,11 +42,13 @@ export function CampaignActions({
     });
     es.addEventListener("done", () => {
       es.close();
+      killServer(`ContentHawk ${type === "judge" ? "issue generation" : "fixing"} completed successfully`);
       setRunning(null);
       setResult(type);
     });
     es.addEventListener("failed", (e: Event) => {
       es.close();
+      killServer(`ContentHawk ${type === "judge" ? "issue generation" : "fixing"} failed`);
       setRunning(null);
       const msg = (e as MessageEvent).data
         ? (JSON.parse((e as MessageEvent).data) as string)
