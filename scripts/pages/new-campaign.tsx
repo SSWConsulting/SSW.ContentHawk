@@ -181,7 +181,10 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
             </div>
           )}
           {status === "error" && (
-            <p className="text-primary flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log below.</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-primary flex items-center font-semibold text-sm mt-3"><X /> Workflow failed. See log below.</p>
+              <p className="text-sm text-muted-foreground">The CLI has finished — you can safely close this tab.</p>
+            </div>
           )}
           <SseLog entries={log} className="mt-4 max-h-64" />
         </CardContent>
