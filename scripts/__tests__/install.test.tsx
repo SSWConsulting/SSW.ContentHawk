@@ -2,10 +2,12 @@ import React, { act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { FormContent, SECRETS } from "../form-component";
+import { InstallPage, SECRETS } from "../pages/install";
 import * as service from "../services/github-service";
+import * as contenthawkService from "../services/contenthawk-service";
 
 vi.mock("../services/github-service");
+vi.mock("../services/contenthawk-service");
 
 const props = { targetRepo: "owner/repo", token: "test-token" };
 
@@ -16,7 +18,7 @@ beforeEach(() => {
 });
 
 async function renderAndOpenSecrets() {
-  const result = render(<FormContent {...props} />);
+  const result = render(<InstallPage {...props} />);
   await userEvent.click(screen.getByRole("button", { name: /Get Started/ }));
   return result;
 }
@@ -28,7 +30,7 @@ describe("GitHub Secrets tab", () => {
     vi.mocked(service.getExistingSecrets).mockReturnValue(new Promise((r) => (resolve = r)));
 
     // ACT
-    render(<FormContent {...props} />);
+    render(<InstallPage {...props} />);
 
     // ASSERT
     expect(screen.getByRole("alert", { name: "loading" })).toBeInTheDocument();
@@ -45,7 +47,7 @@ describe("GitHub Secrets tab", () => {
 
     // ACT
     const { container } = await renderAndOpenSecrets();
-    await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByText("Set")).toHaveLength(1));
 
     // ASSERT
     const input = container.querySelector<HTMLInputElement>(`input[name="${SECRETS[0]}"]`);
@@ -64,7 +66,7 @@ describe("GitHub Secrets tab", () => {
 
     // ASSERT
     await waitFor(() => {
-      expect(screen.getAllByText("✓ Set")).toHaveLength(SECRETS.length);
+      expect(screen.getAllByText("Set")).toHaveLength(SECRETS.length);
       expect(screen.getByRole("button", { name: /Next: Set up Workflows/ })).toBeInTheDocument();
     });
   });
@@ -94,7 +96,7 @@ describe("GitHub Secrets tab", () => {
     );
 
     const { container } = await renderAndOpenSecrets();
-    await waitFor(() => expect(screen.getAllByText("✓ Set")).toHaveLength(1));
+    await waitFor(() => expect(screen.getAllByText("Set")).toHaveLength(1));
 
     const tavilyInput = container.querySelector<HTMLInputElement>(`input[name="TAVILY_API_KEY"]`);
     await userEvent.type(tavilyInput!, "my-tavily-key");
@@ -105,7 +107,7 @@ describe("GitHub Secrets tab", () => {
     // ASSERT
     await waitFor(() => expect(service.submitSecrets).toHaveBeenCalled());
 
-    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][1];
+    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][0];
     expect(submittedData.get("COPILOT_GITHUB_TOKEN")).toBeNull();
     expect(submittedData.get("TAVILY_API_KEY")).toBe("my-tavily-key");
   });
@@ -157,9 +159,8 @@ describe("GitHub Secrets tab", () => {
 
     // ASSERT
     await waitFor(() => {
-      expect(screen.getByText(`✓ Pull request created successfully.`)).toBeInTheDocument();
-       expect(screen.getByRole("link", { name: "https://github.com/owner/repo/pull/1" })).toBeInTheDocument();
-
+      expect(screen.getByText("Pull request created successfully.")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /View generated PR/i })).toHaveAttribute("href", "https://github.com/owner/repo/pull/1");
     });
   });
 
@@ -203,7 +204,7 @@ describe("GitHub Secrets tab", () => {
     const { container } = await renderAndOpenSecrets();
 
     await waitFor(() => {
-      expect(screen.getAllByText("✓ Set")).toHaveLength(SECRETS.length);
+      expect(screen.getAllByText("Set")).toHaveLength(SECRETS.length);
       expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
     });
 
@@ -221,7 +222,7 @@ describe("GitHub Secrets tab", () => {
     // ASSERT
     await waitFor(() => expect(service.submitSecrets).toHaveBeenCalled());
 
-    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][1];
+    const submittedData: URLSearchParams = vi.mocked(service.submitSecrets).mock.calls[0][0];
     expect(submittedData.get(SECRETS[0])).toBe("new-secret-value");
     expect(submittedData.get(SECRETS[1])).toBeNull();
   });
@@ -287,7 +288,7 @@ describe("GitHub Secrets tab", () => {
       expect(screen.queryByRole("button", { name: "Restart Installation" })).not.toBeInTheDocument();
     });
     expect(mockEs.close).toHaveBeenCalled();
-    expect(service.killServer).toHaveBeenCalled();
+    expect(contenthawkService.killServer).toHaveBeenCalled();
   });
 
   it("shows an error banner and keeps submit active when a secret fails", async () => {

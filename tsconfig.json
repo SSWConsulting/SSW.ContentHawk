@@ -8,7 +8,10 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./scripts/*"]
+    }
   },
   "include": ["scripts/**/*"]
 }
