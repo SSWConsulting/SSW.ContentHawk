@@ -1,6 +1,14 @@
 import { CampaignStatus } from "../components/campaign-status-panel";
 import type { ResolvedCatalog } from "../types.ts";
 
+export async function killServer(message?: string): Promise<void> {
+  await fetch("/kill", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+}
+
 export async function fetchCampaignStatuses(): Promise<CampaignStatus[]> {
   const res = await fetch("/campaign-statuses");
   if (!res.ok) return [];

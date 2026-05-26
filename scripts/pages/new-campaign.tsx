@@ -7,6 +7,7 @@ import { Spinner } from "../components/spinner";
 import { OutboundLink } from "../components/outbound-link";
 import { SseLog, type LogEvent } from "../components/sse-log";
 import { PageShell } from "../components/page-shell";
+import { killServer } from "../services/contenthawk-service";
 
 const FIELDS = [
   {
@@ -108,7 +109,7 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
           }
         } catch { /* best-effort */ }
       }
-      setTimeout(() => fetch("/kill", { method: "POST" }), 30000);
+      killServer("ContentHawk campaign created successfully");
     });
     es.addEventListener("failed", (e: Event) => {
       es.close();
@@ -117,6 +118,7 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
         ? (JSON.parse((e as MessageEvent).data) as string)
         : "Unknown error";
       setLog((prev) => [...prev, { type: "log", message: `Error: ${msg}` }]);
+      killServer("Failed to create new ContentHawk Campaign");
     });
     es.onerror = () => {
       if (es.readyState !== EventSource.CLOSED) {
@@ -175,6 +177,7 @@ export function NewCampaignPage({ targetRepo }: NewCampaignPageProps) {
             <div className="flex flex-col gap-2">
               <p className="text-green-500 font-semibold text-sm flex items-center gap-1"><Check className="size-4" /> Workflow completed successfully.</p>
               {prUrl && <OutboundLink href={prUrl}>View generated PR</OutboundLink>}
+              <p className="text-sm text-muted-foreground">The CLI has finished — you can safely close this tab.</p>
             </div>
           )}
           {status === "error" && (

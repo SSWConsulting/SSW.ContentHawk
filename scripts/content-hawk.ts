@@ -381,6 +381,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   const app = express();
   app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
 
   // ── Common routes ──────────────────────────────────────────────────────────
 
@@ -391,7 +392,11 @@ export async function main(argv = process.argv.slice(2)) {
     res.end(html);
   });
 
-  app.post("/kill", () => process.exit(0));
+  app.post("/kill", (req) => {
+    const msg = (req.body as { message?: string })?.message;
+    if (msg) console.log(msg);
+    process.exit(0);
+  });
 
   app.get("/bundle.js", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");

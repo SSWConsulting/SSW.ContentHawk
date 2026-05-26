@@ -1,9 +1,5 @@
 import type { SecretResult } from "../pages/install";
 
-export async function killServer(): Promise<void> {
-  await fetch("/kill", { method: "POST" });
-}
-
 export async function getExistingSecrets(): Promise<string[]> {
   const res = await fetch("/existing-secrets");
   const data = await res.json() as { existing: string[] };

@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { InstallPage, SECRETS } from "../pages/install";
 import * as service from "../services/github-service";
+import * as contenthawkService from "../services/contenthawk-service";
 
 vi.mock("../services/github-service");
+vi.mock("../services/contenthawk-service");
 
 const props = { targetRepo: "owner/repo", token: "test-token" };
 
@@ -286,7 +288,7 @@ describe("GitHub Secrets tab", () => {
       expect(screen.queryByRole("button", { name: "Restart Installation" })).not.toBeInTheDocument();
     });
     expect(mockEs.close).toHaveBeenCalled();
-    expect(service.killServer).toHaveBeenCalled();
+    expect(contenthawkService.killServer).toHaveBeenCalled();
   });
 
   it("shows an error banner and keeps submit active when a secret fails", async () => {
