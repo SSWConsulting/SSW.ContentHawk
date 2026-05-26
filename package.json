@@ -10,17 +10,16 @@
   },
   "files": [
     "dist/content-hawk.js",
-    "dist/form.css"
+    "dist/form.css",
+    "dist/images/*"
   ],
   "scripts": {
     "build": "vite build",
     "test": "vitest",
     "dev": "npx tsx scripts/content-hawk.ts",
-    "start": "node dist/content-hawk.js",
-    "run-workflow": "npx tsx scripts/run-workflow.ts"
+    "start": "node dist/content-hawk.js"
   },
   "dependencies": {
-    "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/inter": "^5.2.8",
     "@octokit/rest": "^22.0.1",
     "@tailwindcss/postcss": "^4.2.4",
