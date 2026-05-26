@@ -1,16 +1,3 @@
-#!/usr/bin/env -S npx tsx
-/**
- * SSW ContentHawk CLI.
- *
- * Modes:
- *   install      <owner/repo>                          — set secrets and install workflows via PR
- *   new-campaign <owner/repo>                          — trigger a new content campaign workflow
- *   campaigns    <owner/repo> [<content-catalog-json>] — manage existing campaigns
- *
- * Spins up an Express server on 127.0.0.1:<random>, opens a browser, and
- * serves the appropriate UI.
- */
-
 import { spawn, spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -339,7 +326,7 @@ function parseArgs(argv: string[]): { mode: Mode; targetRepo: string; contentCat
 
   const targetRepo = argv[1];
   if (!targetRepo || !targetRepo.includes("/") || targetRepo.startsWith("/") || targetRepo.endsWith("/")) {
-    die("Usage: install.ts <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
+    die("Usage: content-hawk.js <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
   }
 
   const catalogJson = argv[2];

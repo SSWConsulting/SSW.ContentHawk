@@ -54,15 +54,6 @@ export default defineConfig(async () => {
       if (id === "postcss") return path.join(stubDir, "postcss.mjs");
       if (id === "@tailwindcss/postcss") return path.join(stubDir, "tailwind-postcss.mjs");
     },
-    generateBundle(_options, bundle) {
-      for (const chunk of Object.values(bundle)) {
-        if ("code" in chunk && chunk.fileName === "content-hawk.js") {
-          // Replace the dev shebang from the source with the node one.
-          // Using banner: causes a rolldown bug that truncates the output.
-          chunk.code = chunk.code.replace(/^#!.*\n/, "#!/usr/bin/env node\n");
-        }
-      }
-    },
     async writeBundle(options) {
       const outDir = options.dir ?? path.join(root, "dist");
       await fs.copyFile(cssPath, path.join(outDir, "form.css"));
