@@ -96,3 +96,33 @@ describe("CampaignActions — fixer completes without a PR", () => {
     });
   });
 });
+
+describe("CampaignActions — close tab message", () => {
+  it("shows the close tab message after a successful run", async () => {
+    render(<CampaignActions {...defaultProps} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /generate issues/i }));
+
+    await act(async () => {
+      mockEs.emit("done");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/you can safely close this tab/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows the close tab message after a failed run", async () => {
+    render(<CampaignActions {...defaultProps} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /generate issues/i }));
+
+    await act(async () => {
+      mockEs.emit("failed", "Something went wrong");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/you can safely close this tab/i)).toBeInTheDocument();
+    });
+  });
+});

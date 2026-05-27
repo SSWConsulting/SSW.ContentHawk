@@ -112,6 +112,9 @@ export function CampaignActions({
         </p>
       )}
       {error && <p className="mt-2 text-xs text-primary">{error}</p>}
+      {(result !== null || error !== null) && (
+        <p className="mt-2 text-sm text-muted-foreground">The CLI has finished — you can safely close this tab.</p>
+      )}
     </div>
   );
 }
