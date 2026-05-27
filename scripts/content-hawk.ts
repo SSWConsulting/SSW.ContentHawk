@@ -212,7 +212,6 @@ async function resolveCatalog(
   const [owner, repo] = targetRepo.split("/");
   type IssueApiResult = { state: string; state_reason: string | null };
   type Task = { campaign: string; index: number; issueNumber: number };
-
   const tasks: Task[] = [];
   for (const [campaign, { items }] of Object.entries(catalog)) {
     for (let i = 0; i < items.length; i++) {
@@ -546,7 +545,8 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     app.get(["/run-judge", "/run-fixer"], async (req, res) => {
-      const workflowFile = req.path === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
+      const isFixer = req.path === "/run-fixer";
+      const workflowFile = isFixer ? CONTENT_FIXER_WORKFLOW_FILE : CONTENT_JUDGE_WORKFLOW_FILE;
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
       res.flushHeaders();
 
@@ -555,7 +555,21 @@ export async function main(argv = process.argv.slice(2)) {
         await triggerWorkflow(targetRepo, {}, (l) => sseLine(res, l), workflowFile);
         const runId = await waitForRunId(targetRepo, beforeMs, (l) => sseText(res, l), workflowFile);
         await watchRun(runId, targetRepo, (l) => sseLine(res, l));
-        res.write("event: done\ndata: {}\n\n");
+
+        if (isFixer) {
+          const runUrl = `https://github.com/${targetRepo}/actions/runs/${runId}`;
+          const [owner, repo] = targetRepo.split("/");
+          const searchRes = githubToken ? await fetch(
+            `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"contenthawk-fixer-run-id: ${runId}"+in:body`,
+            { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+          ) : null;
+          const prUrl = searchRes?.ok
+            ? ((await searchRes.json() as { items: Array<{ html_url: string }> }).items[0]?.html_url ?? null)
+            : null;
+          res.write(`event: done\ndata: ${JSON.stringify({ runId, prUrl, runUrl })}\n\n`);
+        } else {
+          res.write("event: done\ndata: {}\n\n");
+        }
       } catch (err) {
         res.write(`event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`);
       } finally {
@@ -569,7 +583,7 @@ export async function main(argv = process.argv.slice(2)) {
 
       const [owner, repo] = targetRepo.split("/");
       const searchRes = await fetch(
-        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"id: ${runId}"+in:body`,
+        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"contenthawk-fixer-run-id: ${runId}"+in:body`,
         { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
       );
       if (!searchRes.ok) { res.sendStatus(502); return; }
