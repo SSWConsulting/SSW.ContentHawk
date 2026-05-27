@@ -92,6 +92,7 @@ export function InstallPage({ targetRepo }: InstallPageProps) {
       setWorkflowStatus("error");
       const msg = (e as MessageEvent).data ? JSON.parse((e as MessageEvent).data) as string : "Unknown error";
       setWorkflowLog(prev => [...prev, { type: "log", message: `Error: ${msg}` }]);
+      killServer(`ContentHawk installation failed: ${msg}`);
     });
     es.onerror = () => {
       if (es.readyState !== EventSource.CLOSED) {

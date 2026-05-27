@@ -27,12 +27,14 @@ export function CampaignActions({
   const [result, setResult] = useState<null | "judge" | "fixer">(null);
   const [log, setLog] = useState<LogEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [fixerOutcome, setFixerOutcome] = useState<{ prUrl: string | null; runUrl: string } | null>(null);
 
   function runStream(type: "judge" | "fixer", url: string) {
     setRunning(type);
     setResult(null);
     setLog([]);
     setError(null);
+    setFixerOutcome(null);
 
     const es = new EventSource(url);
 
@@ -40,11 +42,15 @@ export function CampaignActions({
       const event = JSON.parse((e as MessageEvent).data) as LogEvent;
       setLog((prev) => [...prev, event]);
     });
-    es.addEventListener("done", () => {
+    es.addEventListener("done", (e) => {
       es.close();
       killServer(`ContentHawk ${type === "judge" ? "issue generation" : "fixing"} completed successfully`);
       setRunning(null);
       setResult(type);
+      if (type === "fixer") {
+        const data = (e as MessageEvent).data ? JSON.parse((e as MessageEvent).data) as { prUrl?: string | null; runUrl?: string } : {};
+        setFixerOutcome({ prUrl: data.prUrl ?? null, runUrl: data.runUrl ?? "" });
+      }
     });
     es.addEventListener("failed", (e: Event) => {
       es.close();
@@ -98,12 +104,17 @@ export function CampaignActions({
           <OutboundLink href={issuesUrl}>View open issues</OutboundLink>
         </p>
       )}
-      {result === "fixer" && (
-        <p className="mt-3">
-          <OutboundLink href={pullsUrl}>View open PRs</OutboundLink>
+      {result === "fixer" && fixerOutcome && (
+        <p className="mt-3 text-sm">
+          {fixerOutcome.prUrl
+            ? <OutboundLink href={fixerOutcome.prUrl}>View pull request</OutboundLink>
+            : <>No PR was generated. <OutboundLink href={fixerOutcome.runUrl}>View workflow run</OutboundLink></>}
         </p>
       )}
       {error && <p className="mt-2 text-xs text-primary">{error}</p>}
+      {(result !== null || error !== null) && (
+        <p className="mt-2 text-sm text-muted-foreground">The CLI has finished — you can safely close this tab.</p>
+      )}
     </div>
   );
 }

@@ -16,8 +16,18 @@ import {
   CONTENTHAWK_WORKFLOW_FILE,
   CONTENT_JUDGE_WORKFLOW_FILE,
   CONTENT_FIXER_WORKFLOW_FILE,
-} from "./constants.ts";
+  INSTALL_COPY_BLACKLIST,
+} from "@/constants.ts";
 import type { ContentCatalog, ResolvedCatalog, ResolvedItem } from "./types.ts";
+import {
+  checkBranchExists,
+  closePRsForBranch,
+  deleteBranch,
+  sparseClone,
+  compileWorkflows,
+  gitRun,
+  createPR,
+} from "./install-helpers.ts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,107 +88,6 @@ function openBrowser(url: string): void {
 
 // ─── Install-mode helpers ────────────────────────────────────────────────────
 
-function checkBranchExists(targetRepo: string): boolean {
-  const [owner, repo] = targetRepo.split("/");
-  return spawnSync("gh", ["api", `repos/${owner}/${repo}/branches/${CONTENTHAWK_INSTALL_BRANCH}`], { stdio: "pipe" }).status === 0;
-}
-
-function closePRsForBranch(targetRepo: string, onLine: (l: string) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const list = spawnSync("gh", ["pr", "list", "--repo", targetRepo, "--head", CONTENTHAWK_INSTALL_BRANCH, "--json", "number"], { encoding: "utf-8" });
-    let prs: Array<{ number: number }> = [];
-    try { prs = JSON.parse(list.stdout ?? "[]"); } catch { /* no PRs */ }
-    if (!prs.length) { resolve(); return; }
-    let pending = prs.length;
-    let failed = false;
-    for (const pr of prs) {
-      onLine(`Closing PR #${pr.number}\u2026`);
-      const child = spawn("gh", ["pr", "close", String(pr.number), "--repo", targetRepo]);
-      child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-      child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-      child.on("error", (err) => { if (!failed) { failed = true; reject(err); } });
-      child.on("close", (code) => {
-        if (code !== 0 && !failed) { failed = true; reject(new Error(`gh pr close exited ${code}`)); }
-        else if (--pending === 0 && !failed) resolve();
-      });
-    }
-  });
-}
-
-function deleteBranch(targetRepo: string, onLine: (l: string) => void): Promise<void> {
-  const [owner, repo] = targetRepo.split("/");
-  return new Promise((resolve, reject) => {
-    onLine(`Deleting branch ${CONTENTHAWK_INSTALL_BRANCH}\u2026`);
-    const child = spawn("gh", ["api", "--method", "DELETE", `repos/${owner}/${repo}/git/refs/heads/${CONTENTHAWK_INSTALL_BRANCH}`]);
-    child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Delete branch exited ${code}`))));
-  });
-}
-
-function sparseClone(repoRef: string, destDir: string, paths: string[], onLine: (l: string) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("gh", ["repo", "clone", repoRef, destDir, "--", "--filter=blob:none", "--no-checkout", "--sparse"]);
-    child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code !== 0) { reject(new Error(`gh repo clone exited ${code}`)); return; }
-      gitRun(["sparse-checkout", "set", ...paths], destDir, onLine)
-        .then(() => gitRun(["checkout"], destDir, onLine))
-        .then(resolve)
-        .catch(reject);
-    });
-  });
-}
-
-function compileWorkflows(cwd: string, onLine: (l: string) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("gh", ["aw", "compile"], { cwd });
-    child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`gh aw compile exited ${code}`))));
-  });
-}
-
-function gitRun(args: string[], cwd: string, onLine: (l: string) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("git", args, { cwd });
-    child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`git ${args[0]} exited ${code}`))));
-  });
-}
-
-function createPR(targetRepo: string, _branch: string, cwd: string, onLine: (l: string) => void): Promise<void> {
-  const body = [
-    "## \uD83E\uDD85 ContentHawk Installation",
-    "",
-    "This pull request installs [ContentHawk](https://github.com/SSWConsulting/SSW.ContentHawk) into this repository.",
-    "",
-    "### What's included",
-    "- `.github/workflows/` \u2014 ContentHawk GitHub Actions workflows",
-    "- `.github/actions/guard-open-pr/` \u2014 supporting composite action",
-    "- `.contenthawk-version` \u2014 pinned ContentHawk version for this repo",
-    "",
-    "### Source",
-    "Files were copied from [SSWConsulting/SSW.ContentHawk](https://github.com/SSWConsulting/SSW.ContentHawk) and compiled with `gh aw compile`.",
-    "",
-    "### Next steps",
-    "Review the changes, then merge to enable ContentHawk on this repo.",
-  ].join("\n");
-  return new Promise((resolve, reject) => {
-    const child = spawn("gh", ["pr", "create", "--title", "\uD83E\uDD85 Installing ContentHawk", "--body", body, "--repo", targetRepo], { cwd });
-    child.stdout.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.stderr.on("data", (d) => String(d).split("\n").filter(Boolean).forEach(onLine));
-    child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`gh pr create exited ${code}`))));
-  });
-}
-
 function getExistingSecrets(targetRepo: string): Set<string> {
   const result = spawnSync("gh", ["secret", "list", "--repo", targetRepo, "--json", "name"], { encoding: "utf-8" });
   if (result.status !== 0) return new Set();
@@ -212,7 +121,6 @@ async function resolveCatalog(
   const [owner, repo] = targetRepo.split("/");
   type IssueApiResult = { state: string; state_reason: string | null };
   type Task = { campaign: string; index: number; issueNumber: number };
-
   const tasks: Task[] = [];
   for (const [campaign, { items }] of Object.entries(catalog)) {
     for (let i = 0; i < items.length; i++) {
@@ -323,6 +231,7 @@ function computeCampaignStatuses(catalog: ContentCatalog): CampaignStatus[] {
 function parseArgs(argv: string[]): { mode: Mode; targetRepo: string; contentCatalog: ContentCatalog | null } {
   const mode = argv[0] as Mode;
   if (mode !== "install" && mode !== "new-campaign" && mode !== "campaigns") {
+
     die("Usage: npx ssw-contenthawk <install|new-campaign|campaigns> <owner/repo> [<content-catalog-json>]");
   }
 
@@ -437,6 +346,9 @@ export async function main(argv = process.argv.slice(2)) {
         const dest = path.join(targetDir, ".github", "workflows");
         await fs.mkdir(dest, { recursive: true });
         for (const file of await fs.readdir(src)) {
+          if (INSTALL_COPY_BLACKLIST.includes(file)) {
+            continue;
+          }
           await fs.copyFile(path.join(src, file), path.join(dest, file));
           sseText(res, `  Copied ${file}`);
         }
@@ -546,7 +458,8 @@ export async function main(argv = process.argv.slice(2)) {
     });
 
     app.get(["/run-judge", "/run-fixer"], async (req, res) => {
-      const workflowFile = req.path === "/run-judge" ? CONTENT_JUDGE_WORKFLOW_FILE : CONTENT_FIXER_WORKFLOW_FILE;
+      const isFixer = req.path === "/run-fixer";
+      const workflowFile = isFixer ? CONTENT_FIXER_WORKFLOW_FILE : CONTENT_JUDGE_WORKFLOW_FILE;
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" });
       res.flushHeaders();
 
@@ -555,7 +468,21 @@ export async function main(argv = process.argv.slice(2)) {
         await triggerWorkflow(targetRepo, {}, (l) => sseLine(res, l), workflowFile);
         const runId = await waitForRunId(targetRepo, beforeMs, (l) => sseText(res, l), workflowFile);
         await watchRun(runId, targetRepo, (l) => sseLine(res, l));
-        res.write("event: done\ndata: {}\n\n");
+
+        if (isFixer) {
+          const runUrl = `https://github.com/${targetRepo}/actions/runs/${runId}`;
+          const [owner, repo] = targetRepo.split("/");
+          const searchRes = githubToken ? await fetch(
+            `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"contenthawk-fixer-run-id: ${runId}"+in:body`,
+            { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
+          ) : null;
+          const prUrl = searchRes?.ok
+            ? ((await searchRes.json() as { items: Array<{ html_url: string }> }).items[0]?.html_url ?? null)
+            : null;
+          res.write(`event: done\ndata: ${JSON.stringify({ runId, prUrl, runUrl })}\n\n`);
+        } else {
+          res.write("event: done\ndata: {}\n\n");
+        }
       } catch (err) {
         res.write(`event: failed\ndata: ${JSON.stringify(err instanceof Error ? err.message : String(err))}\n\n`);
       } finally {
@@ -569,7 +496,7 @@ export async function main(argv = process.argv.slice(2)) {
 
       const [owner, repo] = targetRepo.split("/");
       const searchRes = await fetch(
-        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"id: ${runId}"+in:body`,
+        `https://api.github.com/search/issues?q=repo:${owner}/${repo}+type:pr+"contenthawk-fixer-run-id: ${runId}"+in:body`,
         { headers: { Authorization: `Bearer ${githubToken}`, Accept: "application/vnd.github.v3+json" } },
       );
       if (!searchRes.ok) { res.sendStatus(502); return; }
@@ -610,4 +537,6 @@ export async function main(argv = process.argv.slice(2)) {
   await new Promise<void>(() => {}); // stays alive until /kill calls process.exit
 }
 
-main().catch((e) => die(e instanceof Error ? e.message : String(e)));
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? "")) {                                                                                                            
+    main().catch((e) => die(e instanceof Error ? e.message : String(e)));
+}
