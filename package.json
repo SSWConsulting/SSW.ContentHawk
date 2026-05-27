@@ -8,7 +8,7 @@
   },
   "name": "ssw-contenthawk",
   "packageManager": "pnpm@9.5.0",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "Installer and Claude skill for SSW ContentHawk — sets the GitHub Actions secrets required to run the ContentHawk content-audit pipeline on a target repo.",
   "bin": {
     "ssw-contenthawk": "dist/content-hawk.js"
