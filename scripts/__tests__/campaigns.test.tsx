@@ -89,6 +89,18 @@ describe("CampaignsPage", () => {
     });
   });
 
+  it("displays the sum of all open issue counts on load", async () => {
+    vi.mocked(contenthawkService.fetchOpenIssueCounts).mockResolvedValue({
+      "campaign-a": 3,
+      "campaign-b": 7,
+    });
+
+    render(<CampaignsPage {...props} />);
+    await waitFor(() => {
+      expect(screen.getByText("10")).toBeInTheDocument();
+    });
+  });
+
   it("renders closed and skipped status cells correctly", async () => {
     vi.mocked(contenthawkService.fetchCampaignStatuses).mockResolvedValue([
       { name: "my-campaign", percent: 80 },

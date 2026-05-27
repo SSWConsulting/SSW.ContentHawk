@@ -45,7 +45,7 @@ export function CampaignsPage({ targetRepo }: CampaignsPageProps) {
             )
             : <p className="text-sm text-muted-foreground col-span-1">No campaign data available.</p>}
           <CampaignActions
-            openIssueCount={openIssueCounts[selectedCampaign ?? ""] ?? 0}
+            openIssueCount={Object.values(openIssueCounts).reduce((sum, n) => sum + n, 0)}
             judgeStreamUrl="/run-judge"
             fixerStreamUrl="/run-fixer"
             issuesUrl={`https://github.com/${targetRepo}/issues?q=is:open+label:${encodeURIComponent(selectedCampaign ?? "")}`}
