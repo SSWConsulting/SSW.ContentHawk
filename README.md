@@ -16,7 +16,7 @@ The repo also includes a set of Claude skills for running ContentHawk.
 
 ## 🎥 Video overview
 
-[![ContentHawk overview video](https://img.youtube.com/vi/XkRd0JcMyxM/0.jpg)](https://youtu.be/XkRd0JcMyxM)
+[![ContentHawk overview video](https://img.youtube.com/vi/SXrL8H0A0yA/0.jpg)](https://youtu.be/SXrL8H0A0yA)
 
 **Video: Content Hawk - The wingman for updating your Markdown sites (8 min)**
 
