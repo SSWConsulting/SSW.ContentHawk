@@ -1,17 +1,26 @@
 # SSW.ContentHawk
 
-ContentHawk is a GitHub Actions–based pipeline for auditing repository content. It uses Copilot-powered workflows to judge content, open issues, and create pull requests.
+ContentHawk is a set of GitHub agentic workflows auditing markdown based repository contents, such as static sites. The workflows use GitHub Copilot CLI to judge content, raise issues, and create pull requests.
 
-To use ContentHawk on a repository you want to audit, follow these setup steps.
+The repo also includes a set of Claude skills for running ContentHawk.
+
+| Skill                          | Description                                                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contenthawk-install`          | A Claude skill for managing the installation of ContentHawk on your repository. It copies workflows and configuration files, sets up secrets, and more. |
+| `contenthawk-add-campaign`     | A Claude skill for kicking off ContentHawk by generating a Campaign snapshot and opening a PR.                                                          |
+| `contenthawk-manage-campaigns` | A Claude skill for generating issues and PRs fixing content based on the current campaign.                                                              |
+
+
 
 ---
 
 ## 🎥 Video overview
 
 [![ContentHawk overview video](https://img.youtube.com/vi/XkRd0JcMyxM/0.jpg)](https://youtu.be/XkRd0JcMyxM)
+
 **Video: Content Hawk - The wingman for updating your Markdown sites (8 min)**
 
-## Installing ContentHawk
+## Installing ContentHawk into your repository
 
 ### Option 1: Use the installer skill (recommended)
 
@@ -22,9 +31,6 @@ To use ContentHawk on a repository you want to audit, follow these setup steps.
 
 ```bash
 npx skills add -g SSWConsulting/SSW.ContentHawk
-
-# Altenatively, you can install the skill directly for your your agent of choice like. The Example below shows you how to install the skill for claude.
-npx skills add -g SSWConsulting/SSW.ContentHawk --agent claude-code
 ```
 
 **From the Claude Plugin Marketplace**
@@ -50,57 +56,23 @@ The installer skill can also be downloaded as a plugin from the Claude Plugin Ma
 
 ### Option 2: Manual installation
 
-#### 1. Copy the `.github` folder
-
-Copy the **entire `.github` folder** from this repository into the root of the repository you want to audit. This folder contains the workflows and configuration required for the ContentHawk pipeline.
-
-#### 2. Copilot: fine-grained access token
-
-Create a **read-only, fine-grained personal access token** with:
-
-- **Copilot Requests** enabled
-- **Public repository** access (sufficient for public repos)
-
-Store this token in a **repository secret** named:
-
-- **`COPILOT_GITHUB_TOKEN`**
-
-*(Settings → Secrets and variables → Actions → New repository secret.)*
-
-#### 4. Workflow permissions
-
-In the repository you are auditing:
-
-1. Go to **Settings → Actions → General**.
-2. Under **Workflow permissions**, choose the option that allows **GitHub Actions to create and approve pull requests** (e.g. “Read and write permissions”).
-
-Save the settings.
-
-#### 5. Tavily API key
-
-Add a **repository secret** named:
-
-- **`TAVILY_API_KEY`**
-
-
----
-
-## Summary of required secrets
-
-| Secret name           | Description |
-|-----------------------|-------------|
-| `COPILOT_GITHUB_TOKEN` | Read-only fine-grained token with Copilot Requests; public repo access is fine. |
-| `TAVILY_API_KEY`       | Tavily API Key |
-
-After completing these steps, the ContentHawk workflows in the copied `.github` folder can run in your repository.
-
----
+Refer to the [manual installation instructions](./_docs/manual-installation.md) for a step-by-step guide on how to set up ContentHawk without using the installer skill.
 
 ## Running the pipeline
+
+
+
+You can run the Pipeline by using the skills, triggering the GitHub actions directly, or waiting for scheduled runs to appear.
+
+**Note: a Content Campaign must be generated before the other agents will start generating issues and fixing them with PRs.**
 
 The pipeline runs in four stages. Run them in order; **content-judge-pr** is triggered automatically by **content-judge**, so you only manually run three workflows.
 
 **Flow:** `content-campaign` → `content-judge` → `content-judge-pr (auto)`  → `content-fixer`
+
+
+
+## Pipeline breakdown
 
 ### 1. Content Catalog (Agent 1)
 
@@ -161,28 +133,9 @@ To cut a new release:
 4. Run `npm run build` to produce the bundled `dist/install.js` (and `dist/form.css`).
 5. Run `npm publish` to push to npm. From then on `npx ssw-contenthawk@latest <owner/repo>` resolves to the new version.
 
-### Skill
-
-The skills in `ssw-contenthawk` are automatically published to the marketplace when merged to `main`. Their publication settings are defined in both the `.claude-plugin/marketplace.json` file at the root of the repo and the `.claude-plugin` folder(s) inside of `ssw-contenthawk`.
 
 
-### Testing skills locally
+## Development Instructions
 
-1. Remove the skill if you have a previous version installed
 
-```
-    npx skills remove -g <skill-name> 
-```
-
-2. Install the skill locally from the `ssw-contenthawk` folder
-
-```
-    npx skills add -g ./ssw-contenthawk/skills/<skill-folder-name>
-```
-
-> Note: The skills use the latest version of the `npx` command that is published to the NPM registry. If you need to test changes to the installer script using the skill, you can temporarily modify the skill's command to point to a local file instead of the npm package. For example you would change `npx ssw-contenthawk@latest install <owner/repo>` to `pnpm dev install <owner/repo>`.
-
-### Publishing new versions of the npx commands
-
-1. Get your code changes merged to main, ensuring you bump the version in `package.json` using [npm version](https://docs.npmjs.com/cli/v8/commands/npm-version) with [semver](https://semver.org/).
-2. Go to **Releases | Draft a new release** in GitHub, add a release tag matching the version you set in `package.json` (e.g. `v0.1.16`), and publish the release. This triggers the GitHub Action workflow that builds and publishes the package to npm. You can use the automatically generated release notes or add your own.
+See [development instructions](./_docs/development.md) for details.
