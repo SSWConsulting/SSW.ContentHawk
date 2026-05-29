@@ -29,7 +29,7 @@ The repo also includes a set of Claude skills for running ContentHawk.
 
 run the command below to add the skills to your agent.
 ```bash
-    npx skills add -g SSWConsulting/SSW.ContentHawk
+npx skills add -g SSWConsulting/SSW.ContentHawk
 ```
 
 install the following skills using the interactive prompt:
@@ -139,21 +139,6 @@ Groups open issues with the label into bundles and opens fix PRs that implement 
 Run this after the judge has created issues and you have merged the judge PR. You can run it multiple times as more issues are created or merged.
 
 ---
-
-## Publishing a new version of the installer
-
-
-### Install Script
-
-The installer is published to npm as `ssw-contenthawk` and run via `npx ssw-contenthawk@latest <owner/repo>`. The Claude/AI **skill** (`ssw-contenthawk/skills/contenthawk-install`) is a thin wrapper that instructs the agent to invoke that `npx` command, so the same skill works with Claude Code or any other AI provider that can shell out. The installer itself is no longer bundled inside the skill.
-
-To cut a new release:
-
-1. Bump `version` in `package.json` using [npm version](https://docs.npmjs.com/cli/v8/commands/npm-version) with [semver](https://semver.org/).
-2. Authenticate with npm if you haven't already by running `npm login`. Use SSW's NPM account in Keeper.
-3. Get your code changes reviewed and merged to `main`.
-4. Run `npm run build` to produce the bundled `dist/install.js` (and `dist/form.css`).
-5. Run `npm publish` to push to npm. From then on `npx ssw-contenthawk@latest <owner/repo>` resolves to the new version.
 
 
 
