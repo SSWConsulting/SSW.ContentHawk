@@ -20,6 +20,43 @@ The repo also includes a set of Claude skills for running ContentHawk.
 
 **Video: Content Hawk - The wingman for updating your Markdown sites (8 min)**
 
+
+
+## Installing the Skills
+
+**Using NPX Skills**
+
+
+run the command below to add the skills to your agent.
+```bash
+    npx skills add -g SSWConsulting/SSW.ContentHawk
+```
+
+install the following skills using the interactive prompt:
+
+```bash
+/contenthawk-install
+/contenthawk-add-campaign
+/contenthawk-manage-campaigns
+
+```
+**Using the Claude Plugin Marketplace**
+
+
+Run the commands below to add the `ssw-consulting` Claude plugin marketplace and install the `ssw-contenthawk` plugin, which includes all three skills.
+
+```bash
+/plugin marketplace add SSWConsulting/SSW.ContentHawk
+/plugin install ssw-contenthawk@ssw-consulting
+```
+
+Then, reload your plugins to ensure the skills load 
+
+
+```bash
+/reload-plugins
+```
+
 ## Installing ContentHawk into your repository
 
 ### Option 1: Use the installer skill (recommended)
@@ -29,22 +66,7 @@ The repo also includes a set of Claude skills for running ContentHawk.
 
 **Using NPX Skills**
 
-```bash
-npx skills add -g SSWConsulting/SSW.ContentHawk
-```
-
-**From the Claude Plugin Marketplace**
-
-The installer skill can also be downloaded as a plugin from the Claude Plugin Marketplace. Use the commands below to add the `ssw-consulting` Claude plugin marketplace and install the `ssw-contenthawk` plugin.
-
-```bash
-/plugin marketplace add SSWConsulting/SSW.ContentHawk
-/plugin install ssw-contenthawk@ssw-consulting
-```
-
-
-
-2. Once you've added the installation skill, you can run it with the command below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
+1. Once you've added the installation skill, you can run it with the command below using your agent of choice. Please note that the skill can be run in your CLI from anywhere. ContentHawk runs the installation over HTTP on a sparse clone of your repository.
 
 ```bash
 /contenthawk-install
