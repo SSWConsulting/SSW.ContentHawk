@@ -10,13 +10,13 @@ The skills in the `ssw-contenthawk` folder are automatically published to the ma
 1. Remove the skill if you have a previous version installed
 
 ```
-    npx skills remove -g <skill-name> 
+npx skills remove -g <skill-name> 
 ```
 
 2. Install the skill locally from the `ssw-contenthawk` folder
 
 ```
-    npx skills add -g ./ssw-contenthawk/skills/<skill-folder-name>
+npx skills add -g ./ssw-contenthawk/skills/<skill-folder-name>
 ```
 
 > Note: The skills use the latest version of the `npx` command that is published to the NPM registry. If you need to test changes to the installer script using the skill, you can temporarily modify the skill's command to point to a local file instead of the npm package. For example you would change `npx ssw-contenthawk@latest install <owner/repo>` to `pnpm dev install <owner/repo>`.
