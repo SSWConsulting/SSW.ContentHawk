@@ -55,6 +55,6 @@ Only `ssw-contenthawk/skills/` is scanned for skills (per `plugin.json`'s `"skil
 
 ## Status
 
-v2 is in progress. `contenthawk-install` + the doctor are implemented;
-`contenthawk-add-campaign` (Phase 2) and `contenthawk-manage-campaigns` (Phase 3) are stubs
-pending rewrite — see `_docs/v2-design.md` §10 and each skill's SKILL.md.
+v2 is in progress. `contenthawk-install` + the doctor and `contenthawk-add-campaign` are
+implemented; `contenthawk-manage-campaigns` (Phase 3 — the audit & remediation engine) is a stub
+pending rewrite — see `_docs/v2-design.md` §10 and the skill's SKILL.md.
