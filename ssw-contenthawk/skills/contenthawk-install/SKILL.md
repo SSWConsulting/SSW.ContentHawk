@@ -24,8 +24,13 @@ check 5.
 Find the folders that hold the repo's markdown/MDX content so the config's globs are accurate.
 
 - List the repo root and look for common roots: `content/`, `docs/`, `blog/`, `src/content/`,
-  `pages/`, `_posts/`.
+  `pages/`, `_posts/`. Only include roots that actually exist.
 - If an `AGENTS.md` / `CLAUDE.md` documents where content lives, trust it.
+- **Scope to first-party content; exclude vendored and generated files** so the audit never wastes
+  effort on code you don't own. Prefer content-root-scoped globs (e.g. `content/**/*.{md,mdx}`) over
+  a repo-wide `**/*.md`, and add excludes for: `node_modules/`, vendored themes (Hugo `themes/`),
+  generators' scaffolds/output (`archetypes/`, `resources/`, `public/`, `dist/`, `build/`, `.next/`,
+  `out/`), and changelogs/license files.
 - Confirm the proposed globs with the user, showing roughly how many files match. If you find
   nothing obvious, ask the user which paths to audit.
 

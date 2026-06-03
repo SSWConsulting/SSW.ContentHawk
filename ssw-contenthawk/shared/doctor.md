@@ -27,8 +27,13 @@ the command in this session prefixed with `!` (e.g. `! gh auth login`) so its ou
      `git config --global user.email \"you@example.com\"`, then re-run this skill." STOP.
 
 5. **Working directory is a GitHub repo** — run `gh repo view --json nameWithOwner -q .nameWithOwner`.
-   - Fail → "Open this skill from inside the GitHub repository you want to audit (it needs a GitHub
-     `origin` remote)." STOP.
+   - Fail → ContentHawk opens issues/PRs on GitHub, so it needs a repo with a GitHub `origin`
+     remote. Diagnose and guide:
+     - Not a git repo (`git rev-parse --is-inside-work-tree` fails) → "Run this from inside your
+       project's git repository."
+     - Git repo but no remote (`git remote` is empty) → "This repo has no GitHub remote yet. Push it
+       to GitHub first, e.g. `! gh repo create <name> --source=. --remote=origin --push`."
+     Then STOP.
    - Success → remember the `owner/repo`; later steps and `gh` calls use it.
 
 ## Campaign-skill-only check
