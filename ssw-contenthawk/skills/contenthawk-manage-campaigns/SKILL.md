@@ -66,9 +66,11 @@ For each finding, skip it if it's already handled:
 
 - It's in `findings.json` with an open issue or PR, **or**
 - An open GitHub issue/PR for the same file already carries its marker. Reconcile with GitHub (don't
-  trust `findings.json` alone — an issue may have been closed/edited): list current items with
-  `gh issue list --label "<label>" --state open` / `gh pr list --label "<label>" --state open` and
-  match the marker comment `<!-- contenthawk:campaign=<id> file=<path> -->`.
+  trust `findings.json` alone — an issue may have been closed/edited). Query by marker directly:
+  `gh issue list --label "<label>" --state open --search "file=<path> in:body"` and the equivalent
+  `gh pr list … --search "file=<path> in:body"`. Treat a hit as already-filed — update it rather
+  than open a duplicate. Every issue/PR body must embed `<!-- contenthawk:campaign=<id> file=<path> -->`
+  for this to work.
 
 ## Step 7 — Open issues
 
