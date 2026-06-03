@@ -1,0 +1,34 @@
+# ContentHawk configuration. Committed to your repo; safe to edit by hand.
+# See _docs / the plugin README for the full reference.
+
+content:
+  # Globs for the markdown/MDX ContentHawk should audit.
+  # contenthawk-install pre-fills these from your repo's detected content folders.
+  include:
+    - "content/**/*.{md,mdx}"
+    - "docs/**/*.{md,mdx}"
+  exclude:
+    - "**/node_modules/**"
+    - "**/CHANGELOG.md"
+
+checks:
+  # Toggle built-in checks on/off and override severity here.
+  # Add your own by dropping a file into .contenthawk/checks/ (same format) — it's picked up
+  # automatically, no entry required here unless you want to override its defaults.
+  outdated-content: { enabled: true }
+  ambiguity: { enabled: true }
+  broken-links: { enabled: true }
+  code-sample-validity: { enabled: true }
+  terminology-consistency: { enabled: true }
+  placeholders: { enabled: true }
+
+output:
+  mode: both                  # issues | prs | both
+  labels: ["contenthawk"]
+  branchPrefix: "contenthawk/"
+  issueGranularity: per-file  # per-file (default) | per-finding
+  prGranularity: per-file     # per-file (default) | per-finding | per-campaign
+  severityActions:            # which severities produce issues vs. fix PRs
+    low: [issue]
+    medium: [issue, pr]
+    high: [issue, pr]

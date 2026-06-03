@@ -1,7 +1,7 @@
 {
   "name": "ssw-contenthawk",
-  "version": "0.1.0",
-  "description": "A set of special commands for managing installations for SSW ContentHawk and performing actions with Claude Code.",
+  "version": "2.0.0-beta.0",
+  "description": "ContentHawk audits the markdown/MDX content of your repository with Claude Code — it reviews content for issues (out-of-date info, ambiguity, broken links, and more) and opens GitHub issues and fix PRs. Provides the contenthawk-install, contenthawk-add-campaign, and contenthawk-manage-campaigns skills.",
   "author": {
     "name": "SSW Consulting",
     "email": "google@ssw.com.au"
