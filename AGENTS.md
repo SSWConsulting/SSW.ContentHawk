@@ -34,7 +34,9 @@ Only `ssw-contenthawk/skills/` is scanned for skills (per `plugin.json`'s `"skil
 ## How it works (the model)
 
 - A **skill** is a `SKILL.md` of natural-language instructions Claude follows. Skills reference
-  bundled files by path **relative to the SKILL.md** (e.g. `../../shared/doctor.md`).
+  bundled files via **`${CLAUDE_PLUGIN_ROOT}`** (e.g. `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`) —
+  **not** relative paths. Plugins are copied to a cache on install and skills run in the user's
+  working directory, so `../../`-style paths do not resolve once installed.
 - Every skill starts with the **doctor preflight** (`shared/doctor.md`): `gh` installed, authed,
   scoped; git identity set; inside a GitHub repo. Keep that one file the single source of truth —
   don't duplicate preflight logic into each skill.
@@ -55,8 +57,9 @@ Only `ssw-contenthawk/skills/` is scanned for skills (per `plugin.json`'s `"skil
 
 ## Status
 
-All three v2 skills are implemented: `contenthawk-install` (+ the shared doctor),
-`contenthawk-add-campaign`, and `contenthawk-manage-campaigns` (the audit & remediation engine).
-Remaining before release: end-to-end dogfooding against a real GitHub repo, and a real
-plugin-install test of the bundled-file relative paths (`../../shared/doctor.md` etc.). See
+All three v2 skills are implemented and `claude plugin validate` passes clean. The flow has been
+dogfooded end-to-end against a real GitHub repo (install → add-campaign → manage, producing issues
++ fix PRs with verified dedup). Bundled files are referenced via `${CLAUDE_PLUGIN_ROOT}` so they
+resolve after a marketplace install. Remaining before release: a human-run interactive
+`/plugin install` smoke test, then merge `v2` → `main` and tag/release `v2.0.0`. See
 `_docs/v2-design.md`.
