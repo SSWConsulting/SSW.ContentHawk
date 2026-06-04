@@ -10,11 +10,13 @@ issues and fix PRs. It is **idempotent and resumable**: re-running advances the 
 re-files a finding that already has an open issue/PR. ContentHawk **proposes**; it never merges PRs
 or closes issues the user didn't ask to close.
 
-Bundled reference, relative to this skill file: `../../shared/doctor.md`.
+Bundled reference under `${CLAUDE_PLUGIN_ROOT}` (the plugin's install directory):
+`${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`. Read it from that path — a relative path won't resolve
+once the plugin is installed.
 
 ## Step 1 — Doctor preflight
 
-Read `../../shared/doctor.md` and run checks **1–6**. Stop on the first failure. Note `owner/repo`.
+Read `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md` and run checks **1–6**. Stop on the first failure. Note `owner/repo`.
 
 ## Step 2 — Decide the action
 

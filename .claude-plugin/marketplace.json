@@ -1,6 +1,7 @@
 {
   "name": "ssw-consulting",
   "owner": { "name": "SSW Consulting" },
+  "description": "SSW Consulting's Claude Code plugins, including ContentHawk for auditing markdown content.",
   "plugins": [
     {
       "name": "ssw-contenthawk",

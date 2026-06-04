@@ -10,11 +10,13 @@ review plus the checks to run against it. You create a campaign once here, then 
 repeatedly with `/contenthawk-manage-campaigns`. Keeping the snapshot fixed is what lets the audit
 resume without re-filing duplicates and detect when content drifts underneath it.
 
-Bundled reference, relative to this skill file: `../../shared/doctor.md`.
+Bundled reference under `${CLAUDE_PLUGIN_ROOT}` (the plugin's install directory):
+`${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`. Read it from that path — a relative path won't resolve
+once the plugin is installed.
 
 ## Step 1 — Doctor preflight
 
-Read `../../shared/doctor.md` and run checks **1–6** (including check 6: `.contenthawk/` exists — if
+Read `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md` and run checks **1–6** (including check 6: `.contenthawk/` exists — if
 it doesn't, stop and tell the user to run `/contenthawk-install`). Stop on the first failure. Note
 the `owner/repo`.
 

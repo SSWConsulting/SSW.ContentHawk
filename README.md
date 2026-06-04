@@ -28,6 +28,12 @@ It ships as a Claude Code plugin with three skills:
 
 The three skills are then available in any repo you open.
 
+> **Trying the v2 beta (before it's merged to `main`):** v2 lives on the `v2` branch. Install it
+> directly from that branch with `/plugin marketplace add SSWConsulting/SSW.ContentHawk@v2`, or from
+> a local clone with `/plugin marketplace add /absolute/path/to/SSW.ContentHawk` (uses whatever
+> branch is checked out). Then `/plugin install ssw-contenthawk@ssw-consulting` and `/reload-plugins`
+> as above.
+
 ## Use it
 
 1. **Set up the repo** — open the repo you want to audit in Claude Code and run `/contenthawk-install`.
@@ -46,6 +52,30 @@ Everything lives in the committed `.contenthawk/` directory:
   PRs, or both (per severity).
 - **`checks/`** — the audit rubrics. Add your own by dropping in a markdown file with `id`,
   `severity`, and `enabled` frontmatter plus a rubric body; it's picked up automatically.
+
+## Example: a first audit
+
+Say your repo keeps docs under `docs/` and posts under `content/`. After installing the plugin,
+run the three skills in order:
+
+```bash
+/contenthawk-install           # detects docs/ + content/, scaffolds .contenthawk/ (config + checks)
+/contenthawk-add-campaign      # snapshots the in-scope files, opens an umbrella tracking issue
+/contenthawk-manage-campaigns  # audits the content and opens issues + fix PRs
+```
+
+A typical first run on a small docs set produces, for example:
+
+- **1 umbrella issue** tracking the campaign — e.g. `ContentHawk Campaign: 2026-06-04-audit`.
+- **One issue per file with findings** — e.g. `[ContentHawk] docs/getting-started.md: 3 issue(s)`,
+  listing each problem (an outdated version number, a leftover `TODO`, a vague instruction).
+- **One fix PR per file** for the medium/high findings, on a `contenthawk/<campaign>/<file>` branch.
+  Low-severity nits (e.g. inconsistent terminology) are left in the issue for you to judge rather
+  than auto-changed.
+
+Files with no problems (like a clean reference page) are left untouched. Re-running
+`/contenthawk-manage-campaigns` **advances the same campaign** — it never re-files a finding that
+already has an open issue or PR, so you can run it repeatedly as you work through the backlog.
 
 ## Requirements
 

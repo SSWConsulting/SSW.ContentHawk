@@ -10,12 +10,15 @@ skill is run **once per repo**, from inside the repository you want to audit. It
 any GitHub Actions or workflows — the auditing is done by the ContentHawk skills themselves. All it
 does is check prerequisites and scaffold a committed `.contenthawk/` config directory.
 
-Files referenced below are bundled with this plugin, relative to this skill file:
-`../../shared/doctor.md`, `../../checks/`, `../../templates/config.yml`.
+Files referenced below are bundled with this plugin under **`${CLAUDE_PLUGIN_ROOT}`** (the
+environment variable Claude Code sets to the plugin's install directory):
+`${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`, `${CLAUDE_PLUGIN_ROOT}/checks/`,
+`${CLAUDE_PLUGIN_ROOT}/templates/config.yml`. Always read them from that path — a plain relative
+path will not resolve once the plugin is installed.
 
 ## Step 1 — Doctor preflight
 
-Read `../../shared/doctor.md` and run checks **1–5** in order (skip check 6 — that's for the
+Read `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md` and run checks **1–5** in order (skip check 6 — that's for the
 campaign skills). On the first failure, print the remedy and STOP. Note the `owner/repo` from
 check 5.
 
@@ -41,14 +44,14 @@ without confirming):
 
 ```
 .contenthawk/
-├── config.yml      # from ../../templates/config.yml, with content.include set to the detected globs
-├── checks/         # copy of every file in ../../checks/ (the built-in rubrics)
+├── config.yml      # from ${CLAUDE_PLUGIN_ROOT}/templates/config.yml, with content.include set to the detected globs
+├── checks/         # copy of every file in ${CLAUDE_PLUGIN_ROOT}/checks/ (the built-in rubrics)
 └── campaigns/      # empty; campaigns land here
 ```
 
-- Read `../../templates/config.yml`, set `content.include` (and sensible `exclude`) to the globs
+- Read `${CLAUDE_PLUGIN_ROOT}/templates/config.yml`, set `content.include` (and sensible `exclude`) to the globs
   agreed in Step 2, and write it to `.contenthawk/config.yml`.
-- Copy each built-in check from `../../checks/` into `.contenthawk/checks/`.
+- Copy each built-in check from `${CLAUDE_PLUGIN_ROOT}/checks/` into `.contenthawk/checks/`.
 - Create an empty `.contenthawk/campaigns/` (add a `.gitkeep` so it commits).
 
 ## Step 4 — Summarise and commit
