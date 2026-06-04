@@ -1,119 +1,131 @@
 ---
 name: contenthawk-manage-campaigns
-description: "Visualize and manage all active ContentHawk content campaigns for a target GitHub repository."
+description: Run a ContentHawk audit for the active campaign and manage campaigns — judge content against the enabled checks, open issues and fix PRs, report status, and list/switch/close campaigns. Use when the user wants to run, advance, or manage a ContentHawk content audit.
 ---
 
-# ContentHawk — Manage Campaigns
+# Run & manage ContentHawk campaigns
 
-You are preparing the arguments for `scripts/content-hawk.ts` in campaigns mode to do this you will read the state of all campaigns from markdown tables stored in the target repository.
+This skill runs the audit for the **active campaign** and remediates findings by opening GitHub
+issues and fix PRs. It is **idempotent and resumable**: re-running advances the campaign — it never
+re-files a finding that already has an open issue/PR. ContentHawk **proposes**; it never merges PRs
+or closes issues the user didn't ask to close.
 
-## Schema (copy of the interfaces in `scripts/types.ts`)
+Bundled reference under `${CLAUDE_PLUGIN_ROOT}` (the plugin's install directory):
+`${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`. Read it from that path — a relative path won't resolve
+once the plugin is installed.
 
-```typescript
-type CheckResult = "skipped" | "pending" | number; // number = GitHub issue number e.g. 15
+## Step 1 — Doctor preflight
 
-interface ContentItem {
-  path: string;
-  checkResult: CheckResult;
-  checkedDate: string;    // "YYYY-MM-DD" or "-"
-  lastUpdated: string;    // "YYYY-MM-DD" or "-"
-  categoryList: string;
-  createdDate: string;    // "YYYY-MM-DD"
-}
+Read `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md` and run checks **1–6**. Stop on the first failure. Note `owner/repo`.
 
-interface CampaignData {
-  done?: boolean;   // true when the snapshot comes from the DONE folder
-  items: ContentItem[];
-}
+## Step 2 — Decide the action
 
-type ContentCatalog = Record<string, CampaignData>;
-```
+Default is **run the audit** (Steps 3–8). If the user instead asks to *list*, *show status*,
+*switch*, or *close* campaigns, jump to **Campaign management** at the bottom.
 
-## Procedure
+## Step 3 — Load the active campaign
 
-# Step 0 - Prerequisites
+- Read `.contenthawk/state.json` → `activeCampaign`. If unset, list the campaigns under
+  `.contenthawk/campaigns/` and ask which to use (or tell the user to run
+  `/contenthawk-add-campaign`).
+- Load `campaigns/<id>/snapshot.json` (scope, file manifest, `umbrellaIssue`) and `findings.json`.
+- Load every **enabled** check from `.contenthawk/checks/` (parse each file's `id` / `severity` /
+  `enabled` frontmatter; skip `enabled: false`). Intersect with any `checks:` overrides in
+  `config.yml`.
+- Read `output` from `config.yml`: `mode`, `labels`, `branchPrefix`, `issueGranularity`,
+  `prGranularity`, `severityActions`.
 
-1. **Verify `gh` is authenticated.** Run `gh auth status`. If it fails, tell the user to run `gh auth login` and stop.
-2. **Verify the user has their username set** in their GitHub CLI config. Run `git config --global user.name`. and `git config --global user.email`. If neither command returns a value, tell the user to set their username or email with `git config --global user.name "Your Name"` or `git config --global user.email "your.email@example.com"` and stop.
+## Step 4 — Drift check (don't audit stale files)
 
+For each file in `snapshot.files`, recompute `git hash-object <path>` and compare to the stored
+hash:
 
-### Step 1 — Ask for the target repo
+- **Unchanged** → eligible for audit.
+- **Changed** → the content moved since the snapshot. **Warn**, skip remediation for it this run,
+  and record it in the report. Do **not** auto-rebaseline (the user re-snapshots via
+  `/contenthawk-add-campaign` when ready).
+- **Missing** (file deleted) → note and skip.
 
-Ask the user: **Which GitHub repository would you like to manage campaigns for?** (format: `owner/repo`)
+## Step 5 — Judge the content
 
-### Step 2 — Initialise ContentCatalog
+Determine the working set: in-scope, unchanged files. Let the user limit it if they ask
+(e.g. "just the first 10 files", "only the `ambiguity` check"); if you cap the set, **say so** in
+the report — never truncate silently.
 
-Initialize an empty `ContentCatalog` object:
+For each file, read it and apply each enabled check's rubric (the body of its
+`.contenthawk/checks/<id>.md`). Produce findings, each with:
 
-```typescript
-const contentCatalog: ContentCatalog = {};
-```
+- `file`, `checkId`, `severity` (from the check), a short `title`, a `detail` explaining the
+  problem, a `locator` (heading/line/quoted snippet), and a concrete `suggestedFix`.
+- A stable **key**: a short hash of `"<file>|<checkId>|<normalized offending snippet>"`. This key is
+  how re-runs recognise the same finding.
 
-### Step 3 — Discover snapshot files
+Be conservative — only defensible findings per the rubrics. A file with no issues produces nothing.
 
-Use the GitHub REST API to list the contents of both the TODO and DONE folders in the target repo:
+## Step 6 — Dedup
 
-```bash
-gh api repos/<owner/repo>/contents/.github/ContentHawk/TODO
-gh api repos/<owner/repo>/contents/.github/ContentHawk/DONE
-```
+For each finding, skip it if it's already handled:
 
-Each call returns a JSON array of file objects (or a 404 if the folder doesn't exist — handle gracefully by treating it as an empty list). Filter for entries where `name` ends with `.md`.
+- It's in `findings.json` with an open issue or PR, **or**
+- An open GitHub issue/PR for the same file already carries its marker. Reconcile with GitHub (don't
+  trust `findings.json` alone — an issue may have been closed/edited). Query by marker directly:
+  `gh issue list --label "<label>" --state open --search "file=<path> in:body"` and the equivalent
+  `gh pr list … --search "file=<path> in:body"`. Treat a hit as already-filed — update it rather
+  than open a duplicate. Every issue/PR body must embed `<!-- contenthawk:campaign=<id> file=<path> -->`
+  for this to work.
 
-For each `.md` file from either folder, fetch its raw content using `WebFetch` on the file's `download_url` field from the API response.
+## Step 7 — Open issues
 
-### Step 4 — Parse each snapshot file
+Honor `output.mode` (`issues`/`prs`/`both`) and `severityActions` (only file findings whose severity
+maps to `issue`). With the default `issueGranularity: per-file`, group a file's findings into **one**
+issue:
 
-For each file:
+- Title: `[ContentHawk] <relative/path>: <N> issue(s)`
+- Body: one section per finding (check id, severity, detail, suggested fix, locator); a link to the
+  umbrella issue (`snapshot.umbrellaIssue`) if set; and the marker
+  `<!-- contenthawk:campaign=<id> file=<path> -->`.
+- Labels: `output.labels`. Ensure the label exists first
+  (`gh label create "<label>" --color FBCA04 2>/dev/null || true`).
+- If an open issue with this marker already exists, **update** it instead of creating a duplicate.
 
-#### 4a. Extract the Label
+Create/update with `gh issue create` / `gh issue edit`. Record the issue number against the file's
+findings in `findings.json`.
 
-Find the `## Agent Configuration` section and locate the row where the first column is `Label`. Extract the value (strip surrounding backticks if present). This is the **catalog key** for this file.
+## Step 8 — Open fix PRs
 
-#### 4b. Parse the Files to Review table
+With `prGranularity: per-file` (default), for the findings whose severity maps to `pr`
+(`medium`/`high` by default):
 
-Find the `## Files to Review` section. Parse every data row (skip the header and separator rows). For each row, map the columns to a `ContentItem`:
+1. Branch off the repo's **default branch**:
+   `git switch -c "<branchPrefix><id>/<file-slug>"` (reuse it if it already exists).
+2. Apply the `suggestedFix` for each of that file's PR-eligible findings — minimal, scoped edits to
+   that file only. Don't make unrelated changes.
+3. Commit, push, and open the PR:
+   - Title: `[ContentHawk] Fix <relative/path>`
+   - Body: what changed per finding, `Closes #<issue>` if it fully resolves the file's issue, and
+     the marker comment.
+   - `gh pr create --base <default-branch> --head <branch> --label "<label>"`.
+4. If a branch/PR for this file already exists, push additional commits to it rather than opening a
+   duplicate. **Never merge.**
 
-| Markdown column | ContentItem field | Notes |
-|---|---|---|
-| `Path` | `path` | Use as-is |
-| `CategoryList` | `categoryList` | Use as-is |
-| `Created` | `createdDate` | Use as-is (`YYYY-MM-DD` or `-`) |
-| `LastUpdated` | `lastUpdated` | Use as-is (`YYYY-MM-DD` or `-`) |
-| `CheckedDate` | `checkedDate` | Use as-is (`YYYY-MM-DD` or `-`) |
-| `CheckResult` | `checkResult` | See parsing rules below |
+Record the PR number against the file's findings in `findings.json`.
 
-**CheckResult parsing rules:**
-- `pending` → `"pending"`
-- `skipped` → `"skipped"`
-- `Issue #<N>` (e.g. `Issue #101`) → the integer `N` (e.g. `101`)
-- Any other value → `"pending"`
+## Step 9 — Persist and report
 
-### 4c. Populate the ContentCatalog
+- Write `findings.json` — every finding with its `key`, `severity`, `status`
+  (`issued` / `pr-open` / `skipped` / `resolved`), and any `issue` / `pr` numbers.
+- Print a report: files audited, findings by severity, issues opened/updated, PRs opened/updated,
+  files skipped for drift, findings skipped as duplicates — with links. Remind the user that
+  re-running advances the campaign, and that they review and merge (ContentHawk won't).
 
-Use the extracted Label as the key in `ContentCatalog`. The value must be a `CampaignData` object:
-- `items`: the array of parsed `ContentItem`s
-- `done`: `true` if the snapshot came from the `DONE` folder, omit (or `false`) for `TODO` snapshots.
+## Campaign management
 
-### Step 4d — Order the catalog entries
+When the user asks to manage rather than run:
 
-The order of entries in `ContentCatalog` determines which campaign is shown as "Current" in the UI. Insert entries in this order:
-
-1. **TODO campaigns first**, sorted by their date slug ascending (oldest date first — the date is the `YYYY-MM-DD` prefix of the snapshot filename). The oldest TODO campaign is the active one and will be marked "Current".
-2. **DONE campaigns after**, also sorted by date slug ascending.
-
-Lexicographic sort on the filename is sufficient because the `YYYY-MM-DD` prefix is zero-padded.
-
-### Step 5 — Serialize and run
-
-Serialize the `ContentCatalog` to a compact JSON string (no pretty-printing).
-
-Run the workflow runner in campaigns mode:
-
-```bash
-npx ssw-contenthawk@latest campaigns <owner/repo> '<content-catalog-json>'
-```
-
-Replace `<owner/repo>` with the value from Step 1 and `<content-catalog-json>` with the serialized JSON.
-
-When the command finishes executing it means the user has finished. If the user needs to view the campaign statuses again after the script has run, you will need to rebuild the `<content-catalog-json>` before running the command again by repeating steps 2-5.
+- **list** — enumerate `.contenthawk/campaigns/<id>/`; for each show `status` (open/done from
+  `snapshot.json`), file count, and issue/PR counts from `findings.json`. Mark the active one.
+- **status** — summarise the active campaign's `findings.json`.
+- **switch `<id>`** — set `state.json.activeCampaign` to `<id>` (confirm first).
+- **close `<id>`** — set `snapshot.json.status` to `done`; offer to close the umbrella issue
+  (`gh issue close <umbrellaIssue>`); if it was active, ask which campaign (if any) to make active
+  next.

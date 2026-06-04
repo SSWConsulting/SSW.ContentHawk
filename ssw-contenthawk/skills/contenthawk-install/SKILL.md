@@ -1,18 +1,68 @@
 ---
 name: contenthawk-install
-description: Install SSW ContentHawk on a target GitHub repository by setting the required GitHub Actions secrets. Use when the user wants to set up, install, or configure ContentHawk on a GitHub repo, or asks to add ContentHawk secrets to a repository.
+description: Set up ContentHawk in the current GitHub repository — verify GitHub CLI access and scaffold the .contenthawk/ config and checks. Use when the user wants to install, set up, initialise, or configure ContentHawk on a repo so it can audit content and open issues/PRs.
 ---
 
-# Install SSW ContentHawk on a target repo
+# Install ContentHawk into a repository
 
-ContentHawk is a GitHub Actions pipeline for auditing repository content. Installing it on a target repo requires setting several GitHub Actions secrets via the `gh` CLI.
+ContentHawk audits the markdown/MDX content of a repo and opens GitHub issues and fix PRs. This
+skill is run **once per repo**, from inside the repository you want to audit. It does **not** create
+any GitHub Actions or workflows — the auditing is done by the ContentHawk skills themselves. All it
+does is check prerequisites and scaffold a committed `.contenthawk/` config directory.
 
-## Steps
+Files referenced below are bundled with this plugin under **`${CLAUDE_PLUGIN_ROOT}`** (the
+environment variable Claude Code sets to the plugin's install directory):
+`${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`, `${CLAUDE_PLUGIN_ROOT}/checks/`,
+`${CLAUDE_PLUGIN_ROOT}/templates/config.yml`. Always read them from that path — a plain relative
+path will not resolve once the plugin is installed.
 
-1. **Determine the target repo.** If the user hasn't already provided one, ask them for it in `owner/repo` form before continuing.
-2. **Verify `gh` is authenticated.** Run `gh auth status`. If it fails, tell the user to run `gh auth login` and stop.
-3. **Verify the user has their username set** in their GitHub CLI config. Run `git config --global user.name`. and `git config --global user.email`. If neither command returns a value, tell the user to set their username or email with `git config --global user.name "Your Name"` or `git config --global user.email "your.email@example.com"` and stop.
-4. **Verify the correct agentic workflows CLI is installed** run `gh aw --version`. Ensure the version matches the one specified in `github/gh-aw-actions` `https://raw.githubusercontent.com/SSWConsulting/SSW.ContentHawk/refs/heads/main/.github/aw/actions-lock.json`. If the CLI fails tell the user to install the correct version from listed from the `actions-lock.json` and stop.
-4. **Run the installer.** Run `npx ssw-contenthawk@latest install <owner/repo>`.
+## Step 1 — Doctor preflight
 
-The installer starts a local form server on `127.0.0.1`, prints a `http://127.0.0.1:<port>/?token=...` URL on stderr, and opens it in the user's browser. When the process exits tell the thank the user for running the installer and tell them to re-run the skill if any issues occurred.
+Read `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md` and run checks **1–5** in order (skip check 6 — that's for the
+campaign skills). On the first failure, print the remedy and STOP. Note the `owner/repo` from
+check 5.
+
+## Step 2 — Detect the content layout
+
+Find the folders that hold the repo's markdown/MDX content so the config's globs are accurate.
+
+- List the repo root and look for common roots: `content/`, `docs/`, `blog/`, `src/content/`,
+  `pages/`, `_posts/`. Only include roots that actually exist.
+- If an `AGENTS.md` / `CLAUDE.md` documents where content lives, trust it.
+- **Scope to first-party content; exclude vendored and generated files** so the audit never wastes
+  effort on code you don't own. Prefer content-root-scoped globs (e.g. `content/**/*.{md,mdx}`) over
+  a repo-wide `**/*.md`, and add excludes for: `node_modules/`, vendored themes (Hugo `themes/`),
+  generators' scaffolds/output (`archetypes/`, `resources/`, `public/`, `dist/`, `build/`, `.next/`,
+  `out/`), and changelogs/license files.
+- Confirm the proposed globs with the user, showing roughly how many files match. If you find
+  nothing obvious, ask the user which paths to audit.
+
+## Step 3 — Scaffold `.contenthawk/`
+
+Create the directory structure (only what's missing — never overwrite an existing `config.yml`
+without confirming):
+
+```
+.contenthawk/
+├── config.yml      # from ${CLAUDE_PLUGIN_ROOT}/templates/config.yml, with content.include set to the detected globs
+├── checks/         # copy of every file in ${CLAUDE_PLUGIN_ROOT}/checks/ (the built-in rubrics)
+└── campaigns/      # empty; campaigns land here
+```
+
+- Read `${CLAUDE_PLUGIN_ROOT}/templates/config.yml`, set `content.include` (and sensible `exclude`) to the globs
+  agreed in Step 2, and write it to `.contenthawk/config.yml`.
+- Copy each built-in check from `${CLAUDE_PLUGIN_ROOT}/checks/` into `.contenthawk/checks/`.
+- Create an empty `.contenthawk/campaigns/` (add a `.gitkeep` so it commits).
+
+## Step 4 — Summarise and commit
+
+- Print what was created, the content globs, and the enabled checks.
+- Tell the user to **commit `.contenthawk/`** (offer to stage and commit it for them).
+- Remind them they can customise: edit `config.yml` (globs, `output.mode`, severity actions) and add
+  their own checks by dropping a markdown file into `.contenthawk/checks/`.
+
+## Step 5 — Offer the first campaign
+
+Offer to chain straight into the first audit: ask the user whether to run **`/contenthawk-add-campaign`**
+now to start their first campaign. If yes, hand off to that skill; if no, tell them to run it when
+ready.

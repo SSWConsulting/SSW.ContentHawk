@@ -1,12 +1,65 @@
-### Front end
-Do not edit shadcn components directly when making tweaks. Instead use the className prop to customize them and/or wrap them in your own components. This will make it easier to update shadcn in the future without losing your customizations.
+# AGENTS.md
 
-When classes need to be merged, use the `cn` utility function from `./lib/utils.ts` to merge them. This function intelligently merges Tailwind classes, ensuring that conflicting classes are resolved correctly (e.g., `bg-red-500` and `bg-blue-500` will resolve to the last one).
+This file provides guidance to AI coding agents working in this repository.
 
-### Test Suites
-Bugs and edge cases are likely to arise on the front end. Whenever you fix a bug on the front end be sure to add a new test in `scripts/__tests__` to cover the bug you just fixed to ensure there are no regressions.
+## What this repository is
 
-### Back end
-Be sure to handle any sensitive operations (e.g. running task in GitHub) here. If the front end needs to trigger an event or operation, create an API for this and call it via a service method from the front end. Do not call GitHub APIs directly from the front end or expose any sensitive information (e.g. tokens) to the front end.
+This repo **is** ContentHawk: a Claude Code **plugin** distributed through the `ssw-consulting`
+marketplace. As of **v2** there is no application code, no GitHub Actions pipeline, and no npm
+package — the auditing is performed by the skills themselves when a user runs them. The repo is
+just the plugin: skill instructions plus the bundled check rubrics and config template.
 
-Use `github-service.ts` for methods that interact with GitHub (secrets, branches, workflow streams, PRs). Use `contenthawk-service.ts` for any other back-end calls that are not GitHub-specific (e.g. campaign data, server lifecycle).
+> v1 (the old GitHub-Actions + Copilot-CLI + React-form-app pipeline) is preserved on the
+> **`legacy/v1`** branch and the `v0.1.x` releases. Do not reintroduce it on `main`/`v2`.
+
+## Layout
+
+```
+.claude-plugin/marketplace.json     # the ssw-consulting marketplace (lists the plugin)
+ssw-contenthawk/
+├── .claude-plugin/plugin.json      # plugin manifest (name, version, skills dir)
+├── skills/                         # the three skills (each a dir with SKILL.md)
+│   ├── contenthawk-install/
+│   ├── contenthawk-add-campaign/
+│   └── contenthawk-manage-campaigns/
+├── shared/doctor.md                # preflight checklist shared by all skills
+├── checks/                         # built-in audit rubrics (the check library)
+└── templates/config.yml            # default .contenthawk/config.yml written by install
+_docs/v2-design.md                  # full v2 architecture & decisions
+```
+
+Only `ssw-contenthawk/skills/` is scanned for skills (per `plugin.json`'s `"skills": "./skills/"`);
+`shared/`, `checks/`, and `templates/` are plain bundled files the skills read at runtime.
+
+## How it works (the model)
+
+- A **skill** is a `SKILL.md` of natural-language instructions Claude follows. Skills reference
+  bundled files via **`${CLAUDE_PLUGIN_ROOT}`** (e.g. `${CLAUDE_PLUGIN_ROOT}/shared/doctor.md`) —
+  **not** relative paths. Plugins are copied to a cache on install and skills run in the user's
+  working directory, so `../../`-style paths do not resolve once installed.
+- Every skill starts with the **doctor preflight** (`shared/doctor.md`): `gh` installed, authed,
+  scoped; git identity set; inside a GitHub repo. Keep that one file the single source of truth —
+  don't duplicate preflight logic into each skill.
+- `contenthawk-install` scaffolds a committed **`.contenthawk/`** directory in the *target* repo
+  (config + a copy of `checks/` + `campaigns/`). The audit reads enabled checks from there, so
+  users can add checks without touching this plugin.
+- A **check** is a markdown rubric with `id` / `severity` / `enabled` frontmatter. The audit loads
+  every enabled check generically — adding one is a new file, not new code.
+
+## Conventions
+
+- Keep skills declarative and tool-agnostic; drive GitHub through the `gh` CLI, never hardcode
+  tokens or org/repo-specific values (this is a public template — see `_docs/v2-design.md` §2).
+- Keep skill names stable (`contenthawk-install`, `contenthawk-add-campaign`,
+  `contenthawk-manage-campaigns`) — existing installs upgrade in place.
+- Bump `ssw-contenthawk/.claude-plugin/plugin.json` `version` (and `.contenthawk-version`) on
+  releases; tag + cut a GitHub Release.
+
+## Status
+
+All three v2 skills are implemented and `claude plugin validate` passes clean. The flow has been
+dogfooded end-to-end against a real GitHub repo (install → add-campaign → manage, producing issues
++ fix PRs with verified dedup). Bundled files are referenced via `${CLAUDE_PLUGIN_ROOT}` so they
+resolve after a marketplace install. Remaining before release: a human-run interactive
+`/plugin install` smoke test, then merge `v2` → `main` and tag/release `v2.0.0`. See
+`_docs/v2-design.md`.
